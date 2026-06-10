@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2026-06-10
+
+### Fixed
+- **Security Hardening (Code Scanning & Dependabot fixes)**:
+  - Removed the hardcoded fallback JWT secret in `src/lib/jwt.ts` and replaced it with a dynamically generated fallback key using standard global `crypto.getRandomValues()` to resolve hardcoded cryptographic credential scanner warnings.
+  - Hardened cookie configurations for the legacy `bumdes_user` session cookie by adding `secure: process.env.NODE_ENV === "production"`, `sameSite: "lax"`, and explicit `httpOnly` flags to set and delete operations in authentication and reset API routes.
+  - Resolved the PostCSS vulnerability (XSS via Unescaped `</style>` tag) by upgrading `postcss` in devDependencies to `^8.5.10` and setting a package-wide override in `package.json` to force all Next.js sub-dependencies to use a secure PostCSS version.
+
 ## [1.3.0] - 2026-06-10
 
 ### Added

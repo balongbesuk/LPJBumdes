@@ -75,6 +75,9 @@ export async function POST() {
     // Clear legacy cookie
     response.cookies.set("bumdes_user", "", {
       path: "/",
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
       maxAge: 0,
     })
 

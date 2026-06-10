@@ -1,9 +1,29 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose"
 
-// Secret key for JWT signing — encoded as Uint8Array for jose
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || "bumdes-default-secret-change-in-production"
-)
+// Generate a runtime-only random secret to avoid hardcoded credentials warnings in CodeQL.
+// This ensures that the system is secure by default if no environment variable is provided.
+const fallbackSecret = typeof window === "undefined"
+  ? (globalThis.crypto?.getRandomValues(new Uint8Array(32)) || new Uint8Array(32))
+  : new Uint8Array(32)
+
+const getSecretKey = (): Uint8Array => {
+  const secret = process.env.JWT_SECRET
+  if (secret) {
+    return new TextEncoder().encode(secret)
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    console.warn(
+      "⚠️ WARNING: JWT_SECRET environment variable is not defined! " +
+      "A random secret key has been generated for this session. " +
+      "Users will be logged out if the server restarts."
+    )
+  }
+
+  return fallbackSecret
+}
+
+const SECRET_KEY = getSecretKey()
 
 const ISSUER = "bumdes-system"
 const AUDIENCE = "bumdes-app"
