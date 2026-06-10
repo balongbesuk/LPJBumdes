@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import * as crypto from "crypto"
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex")
-}
+import { comparePassword, hashPassword } from "@/lib/auth"
 
 // POST: Change password for the logged-in user (accessible by ALL roles)
 export async function POST(request: Request) {
@@ -35,23 +31,17 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verify current password
-    const currentHash = hashPassword(currentPassword)
-    if (user.passwordHash !== currentHash) {
+    // Verify current password (supports both bcrypt and legacy SHA-256)
+    const isValid = await comparePassword(currentPassword, user.passwordHash)
+    if (!isValid) {
       return NextResponse.json(
         { success: false, error: "Password lama tidak cocok" },
         { status: 401 }
       )
     }
 
-    // Check new password is different
-    const newHash = hashPassword(newPassword)
-    if (currentHash === newHash) {
-      return NextResponse.json(
-        { success: false, error: "Password baru harus berbeda dari password lama" },
-        { status: 400 }
-      )
-    }
+    // Hash new password with bcrypt
+    const newHash = await hashPassword(newPassword)
 
     // Update password
     await db.user.update({

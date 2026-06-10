@@ -23,10 +23,16 @@ export default function LoginPage() {
     fetch("/api/setup")
       .then((r) => r.json())
       .then((result) => {
-        if (result.success && result.data) {
-          if (result.data.bumdes_name) setBumdesName(result.data.bumdes_name)
-          const parts = [result.data.village_name, result.data.district_name, result.data.regency_name].filter(Boolean)
-          if (parts.length > 0) setLocationText(parts.join(", "))
+        if (result.success) {
+          if (!result.isComplete) {
+            router.replace("/setup")
+            return
+          }
+          if (result.data) {
+            if (result.data.bumdes_name) setBumdesName(result.data.bumdes_name)
+            const parts = [result.data.village_name, result.data.district_name, result.data.regency_name].filter(Boolean)
+            if (parts.length > 0) setLocationText(parts.join(", "))
+          }
         }
       })
       .catch(() => {})

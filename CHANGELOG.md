@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-06-10
+
+### Added
+- **Reset Database Feature**:
+  - Added a "Reset Database (Mulai Baru)" card and button in the Backup & Recovery tab under Settings (`/pengaturan`).
+  - Added a double-confirmation modal requiring the user to type `"RESET"` before initiating database reset.
+  - Wipes all transactional data, fixed assets, members, audit logs, and period locks while preserving administrative logins.
+  - Automatically clears JWT (`bumdes_token`) and user session (`bumdes_user`) cookies on reset.
+  - Configured login page (`/login`) to automatically redirect to the setup wizard (`/setup`) if the database settings are in a fresh/empty state.
+
 ## [1.2.0] - 2026-06-10
 
 ### Added

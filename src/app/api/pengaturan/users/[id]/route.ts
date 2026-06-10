@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import * as crypto from "crypto"
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex")
-}
+import { hashPassword } from "@/lib/auth"
 
 // PUT: Update user (name, role, optionally password)
 export async function PUT(
@@ -50,7 +46,7 @@ export async function PUT(
           { status: 400 }
         )
       }
-      updateData.passwordHash = hashPassword(password)
+      updateData.passwordHash = await hashPassword(password)
     }
 
     const user = await db.user.update({

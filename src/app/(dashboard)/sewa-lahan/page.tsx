@@ -5,26 +5,21 @@ import {
   Map,
   Plus,
   Search,
-  Calendar,
-  User,
-  Phone,
-  DollarSign,
+  Printer,
   CheckCircle,
   AlertCircle,
-  X,
-  Clock,
-  TrendingDown,
   Info,
-  CalendarDays,
-  MessageCircle,
-  Printer,
-  Edit2,
-  Power
 } from "lucide-react"
 import { formatRupiah } from "@/lib/utils"
 import KwitansiModal from "@/components/KwitansiModal"
 import WaNotificationModal from "@/components/WaNotificationModal"
 import { useSettings } from "@/context/SettingsContext"
+
+// Sub-components
+import LahanTable from "./components/LahanTable"
+import LahanReportTab from "./components/LahanReportTab"
+import LahanContractModal from "./components/LahanContractModal"
+import LahanPaymentModal from "./components/LahanPaymentModal"
 
 interface Payment {
   id: string
@@ -466,7 +461,7 @@ export default function SewaLahanPage() {
             </button>
             <button
               onClick={() => setPrintType(null)}
-              className="bg-slate-700 hover:bg-slate-655 text-white font-bold px-4 py-2 rounded-xl text-xs transition active:scale-95"
+              className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition active:scale-95"
             >
               Tutup Pratinjau
             </button>
@@ -553,787 +548,170 @@ export default function SewaLahanPage() {
             )}
           </div>
 
-      {/* Grid List */}
-      {activeTab === "laporan" ? (
-        <div className="space-y-6 animate-fade-in">
-          {/* Filter Bar */}
-          <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-wrap gap-4 items-center justify-between no-print">
-            <div className="flex gap-3 items-center">
-              <span className="text-xs font-bold text-slate-500 uppercase">Filter Laporan:</span>
-              <select
-                value={reportMonth}
-                onChange={(e) => setReportMonth(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
-              >
-                <option value="all">Semua Bulan</option>
-                <option value="1">Januari</option>
-                <option value="2">Februari</option>
-                <option value="3">Maret</option>
-                <option value="4">April</option>
-                <option value="5">Mei</option>
-                <option value="6">Juni</option>
-                <option value="7">Juli</option>
-                <option value="8">Agustus</option>
-                <option value="9">September</option>
-                <option value="10">Oktober</option>
-                <option value="11">November</option>
-                <option value="12">Desember</option>
-              </select>
-              <select
-                value={reportYear}
-                onChange={(e) => setReportYear(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
-              >
-                <option value="all">Semua Tahun</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-              </select>
+          {/* Loader or dynamic tabs */}
+          {loading ? (
+            <div className="py-12 flex flex-col items-center justify-center gap-3">
+              <div className="w-10 h-10 border-4 border-emerald-650 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-slate-400 font-semibold text-xs animate-pulse">Memproses data sewa lahan...</p>
             </div>
-            
-            {reportLoading && (
-              <span className="text-xs text-slate-400 font-semibold animate-pulse">
-                Memuat data laporan...
-              </span>
-            )}
-          </div>
-
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Pendapatan Unit</span>
-                <span className="text-xl font-bold text-emerald-600 mt-1 block">
-                  {formatRupiah(lahanReportData.payments.reduce((sum, p) => sum + p.amount, 0))}
-                </span>
-              </div>
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-                <TrendingDown className="w-6 h-6 rotate-180" />
-              </div>
+          ) : error ? (
+            <div className="p-6 bg-rose-50 border border-rose-100 rounded-3xl text-rose-800">
+              <p className="font-bold text-sm">Terjadi Kesalahan</p>
+              <p className="mt-1 text-xs font-semibold text-rose-600">{error}</p>
             </div>
+          ) : activeTab === "laporan" ? (
+            <LahanReportTab
+              reportMonth={reportMonth}
+              setReportMonth={setReportMonth}
+              reportYear={reportYear}
+              setReportYear={setReportYear}
+              reportLoading={reportLoading}
+              lahanReportData={lahanReportData}
+            />
+          ) : (
+            <LahanTable
+              filteredContracts={filteredContracts}
+              activeTab={activeTab}
+              settings={settings}
+              setSelectedContract={setSelectedContract}
+              setPayAmount={setPayAmount}
+              setPayPeriod={setPayPeriod}
+              setFormError={setFormError}
+              setFormSuccess={setFormSuccess}
+              setActiveModal={setActiveModal}
+              setEditTenantName={setEditTenantName}
+              setEditTenantPhone={setEditTenantPhone}
+              setEditRentFee={setEditRentFee}
+              handleToggleContractStatus={handleToggleContractStatus}
+              setWaModalData={setWaModalData}
+              setShowWaModal={setShowWaModal}
+            />
+          )}
 
-            <div className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Pengeluaran Unit</span>
-                <span className="text-xl font-bold text-rose-600 mt-1 block">
-                  {formatRupiah(lahanReportData.expenses.reduce((sum, e) => sum + e.amount, 0))}
-                </span>
-              </div>
-              <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl">
-                <TrendingDown className="w-6 h-6" />
-              </div>
-            </div>
+          {/* Modals Container */}
+          <LahanContractModal
+            activeModal={activeModal}
+            selectedContract={selectedContract}
+            setActiveModal={setActiveModal}
+            formError={formError}
+            formSuccess={formSuccess}
+            formSubmitLoading={formSubmitLoading}
+            handleCreateContract={handleCreateContract}
+            handleUpdateContract={handleUpdateContract}
+            contractType={contractType}
+            setContractType={setContractType}
+            kavlingNumber={kavlingNumber}
+            setKavlingNumber={setKavlingNumber}
+            lapakShift={lapakShift}
+            setLapakShift={setLapakShift}
+            tenantName={tenantName}
+            setTenantName={setTenantName}
+            tenantPhone={tenantPhone}
+            setTenantPhone={setTenantPhone}
+            rentFee={rentFee}
+            setRentFee={setRentFee}
+            startDateStr={startDateStr}
+            setStartDateStr={setStartDateStr}
+            endDateStr={endDateStr}
+            initialPayment={initialPayment}
+            setInitialPayment={setInitialPayment}
+            paymentPeriod={paymentPeriod}
+            setPaymentPeriod={setPaymentPeriod}
+            editTenantName={editTenantName}
+            setEditTenantName={setEditTenantName}
+            editTenantPhone={editTenantPhone}
+            setEditTenantPhone={setEditTenantPhone}
+            editRentFee={editRentFee}
+            setEditRentFee={setEditRentFee}
+          />
 
-            <div className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Laba Bersih Unit</span>
-                {(() => {
-                  const net = lahanReportData.payments.reduce((sum, p) => sum + p.amount, 0) - 
-                              lahanReportData.expenses.reduce((sum, e) => sum + e.amount, 0)
-                  return (
-                    <span className={`text-xl font-bold mt-1 block ${net >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                      {formatRupiah(net)}
-                    </span>
-                  )
-                })()}
-              </div>
-              <div className="p-3 bg-slate-50 text-slate-600 rounded-2xl">
-                <DollarSign className="w-6 h-6" />
-              </div>
-            </div>
-          </div>
+          <LahanPaymentModal
+            activeModal={activeModal}
+            selectedContract={selectedContract}
+            setActiveModal={setActiveModal}
+            formError={formError}
+            formSuccess={formSuccess}
+            formSubmitLoading={formSubmitLoading}
+            payAmount={payAmount}
+            setPayAmount={setPayAmount}
+            payPeriod={payPeriod}
+            setPayPeriod={setPayPeriod}
+            handleCreatePayment={handleCreatePayment}
+            setReceiptData={setReceiptData}
+            setShowReceipt={setShowReceipt}
+          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Pemasukan Table */}
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden flex flex-col">
-              <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  Rincian Penerimaan Iuran Sewa Lahan
-                </h4>
-                <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
-                  {lahanReportData.payments.length} Transaksi
-                </span>
-              </div>
-              <div className="overflow-x-auto flex-1 max-h-[400px]">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
-                      <th className="px-4 py-3">Tanggal</th>
-                      <th className="px-4 py-3">Pedagang</th>
-                      <th className="px-4 py-3">Kavling</th>
-                      <th className="px-4 py-3">Periode</th>
-                      <th className="px-4 py-3 text-right">Jumlah</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 text-[11px] text-slate-700">
-                    {lahanReportData.payments.length > 0 ? (
-                      lahanReportData.payments.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50/50">
-                          <td className="px-4 py-3">{new Date(p.date).toLocaleDateString("id-ID")}</td>
-                          <td className="px-4 py-3 font-semibold">{p.tenantName}</td>
-                          <td className="px-4 py-3 font-bold text-slate-655">{p.type} {p.kavlingNumber}</td>
-                          <td className="px-4 py-3">{p.periodCovered}</td>
-                          <td className="px-4 py-3 text-right font-bold text-emerald-655">{formatRupiah(p.amount)}</td>
-                        </tr>
-                      ))
+          {/* Custom Confirmation Modal */}
+          {confirmState.isOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+              <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-sm shadow-2xl p-6 relative">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className={`p-3.5 rounded-full ${
+                    confirmState.color === "rose" ? "bg-rose-50 text-rose-600" :
+                    confirmState.color === "amber" ? "bg-amber-50 text-amber-600" :
+                    "bg-emerald-50 text-emerald-600"
+                  }`}>
+                    {confirmState.color === "rose" ? (
+                      <AlertCircle className="w-8 h-8" />
+                    ) : confirmState.color === "amber" ? (
+                      <Info className="w-8 h-8" />
                     ) : (
-                      <tr>
-                        <td colSpan={5} className="px-4 py-8 text-center text-slate-400 font-semibold">
-                          Tidak ada pemasukan tercatat pada periode ini.
-                        </td>
-                      </tr>
+                      <CheckCircle className="w-8 h-8" />
                     )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-slate-900 text-base">{confirmState.title}</h3>
+                    <p className="text-slate-500 text-xs font-medium px-2 leading-relaxed">
+                      {confirmState.message}
+                    </p>
+                  </div>
 
-            {/* Pengeluaran Table */}
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden flex flex-col">
-              <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-rose-500" />
-                  Rincian Pengeluaran Operasional Unit
-                </h4>
-                <span className="text-[10px] bg-rose-50 text-rose-700 px-2 py-0.5 rounded-full font-bold">
-                  {lahanReportData.expenses.length} Transaksi
-                </span>
-              </div>
-              <div className="overflow-x-auto flex-1 max-h-[400px]">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
-                      <th className="px-4 py-3">Tanggal</th>
-                      <th className="px-4 py-3">Keterangan Pengeluaran</th>
-                      <th className="px-4 py-3">Kode Akun</th>
-                      <th className="px-4 py-3 text-right">Jumlah</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 text-[11px] text-slate-700">
-                    {lahanReportData.expenses.length > 0 ? (
-                      lahanReportData.expenses.map((e) => (
-                        <tr key={e.id} className="hover:bg-slate-50/50">
-                          <td className="px-4 py-3">{new Date(e.date).toLocaleDateString("id-ID")}</td>
-                          <td className="px-4 py-3 font-semibold text-slate-700">{e.description}</td>
-                          <td className="px-4 py-3 font-medium text-slate-400">{e.accountCode}</td>
-                          <td className="px-4 py-3 text-right font-bold text-rose-600">{formatRupiah(e.amount)}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} className="px-4 py-8 text-center text-slate-400 font-semibold">
-                          Tidak ada pengeluaran operasional tercatat pada periode ini.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kavling</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nama Pedagang</th>
-                  {activeTab === "lapak" && (
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Shift</th>
-                  )}
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Biaya Sewa</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Periode Kontrak</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Sisa Waktu</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 text-slate-700 text-xs">
-                {filteredContracts.length > 0 ? (
-                  filteredContracts.map((contract) => {
-                    const daysRemaining = calculateDaysRemaining(contract.periodEnd)
-                    const start = new Date(contract.periodStart).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" })
-                    const end = new Date(contract.periodEnd).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" })
-
-                    return (
-                      <tr key={contract.id} className="hover:bg-slate-50/50 transition-all">
-                        <td className="px-6 py-4 font-bold text-slate-800">
-                          {contract.type} {contract.number}
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-slate-700">
-                          <div>{contract.tenantName}</div>
-                          <span className="text-[10px] text-slate-400 mt-1 block">{contract.phone || "-"}</span>
-                        </td>
-                        {activeTab === "lapak" && (
-                          <td className="px-6 py-4">
-                            <span className={`inline-block px-2 py-0.5 rounded-full border text-[9px] font-bold ${
-                              contract.shift === "PAGI"
-                                ? "bg-amber-50 text-amber-800 border-amber-200"
-                                : "bg-indigo-50 text-indigo-800 border-indigo-200"
-                            }`}>
-                              {contract.shift}
-                            </span>
-                          </td>
-                        )}
-                        <td className="px-6 py-4 text-right font-bold text-slate-800">
-                          {formatRupiah(contract.fee)} 
-                          <span className="text-[9px] font-semibold text-slate-400 ml-1">
-                            /{contract.type === "WARUNG" ? "thn" : "bln"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center font-medium text-slate-600">
-                          {start} s.d {end}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {daysRemaining > 0 ? (
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[9px] font-bold ${
-                              daysRemaining <= 30
-                                ? "bg-amber-55 border border-amber-200 text-amber-805"
-                                : "bg-emerald-50 border border-emerald-100 text-emerald-800"
-                            }`}>
-                              {daysRemaining} hari lagi
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border bg-rose-50 text-rose-800 border-rose-200 text-[9px] font-bold">
-                              Habis Kontrak
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-center font-semibold">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            contract.status === "ACTIVE"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                              : contract.status === "TERMINATED"
-                                ? "bg-rose-50 text-rose-700 border border-rose-100"
-                                : "bg-slate-50 text-slate-400 border border-slate-100"
-                          }`}>
-                            {contract.status === "ACTIVE" ? "Aktif" : contract.status === "TERMINATED" ? "Nonaktif" : "Selesai"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              disabled={contract.status !== "ACTIVE"}
-                              onClick={() => {
-                                setSelectedContract(contract)
-                                setPayAmount(String(contract.fee))
-                                setPayPeriod("")
-                                setFormError(null)
-                                setFormSuccess(null)
-                                setActiveModal("payment")
-                              }}
-                              className={`px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-sm transition-all flex items-center gap-1 ${
-                                contract.status === "ACTIVE"
-                                  ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-150 active:scale-95 cursor-pointer"
-                                  : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
-                              }`}
-                            >
-                              <TrendingDown className="w-3 h-3" />
-                              Input Iuran
-                            </button>
-
-                            {/* Edit button */}
-                            <button
-                              onClick={() => {
-                                setSelectedContract(contract)
-                                setEditTenantName(contract.tenantName)
-                                setEditTenantPhone(contract.phone || "")
-                                setEditRentFee(String(contract.fee))
-                                setFormError(null)
-                                setFormSuccess(null)
-                                setActiveModal("edit_contract")
-                              }}
-                              className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 border border-amber-150 rounded-xl transition shadow-sm active:scale-95"
-                              title="Edit Kontrak"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Toggle status button (Power) */}
-                            <button
-                              onClick={() => handleToggleContractStatus(contract)}
-                              className={`p-1.5 border rounded-xl transition shadow-sm active:scale-95 ${
-                                contract.status === "ACTIVE"
-                                  ? "bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-150"
-                                  : "bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-150"
-                              }`}
-                              title={contract.status === "ACTIVE" ? "Nonaktifkan Kontrak" : "Aktifkan Kontrak"}
-                            >
-                              <Power className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* WA Reminder button */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const remainingText = daysRemaining > 0
-                                  ? `akan berakhir dalam ${daysRemaining} hari lagi (jatuh tempo pada tanggal ${new Date(contract.periodEnd).toLocaleDateString("id-ID", { dateStyle: "long" })})`
-                                  : `telah berakhir pada tanggal ${new Date(contract.periodEnd).toLocaleDateString("id-ID", { dateStyle: "long" })}`
-                                
-                                setWaModalData({
-                                  recipientName: contract.tenantName,
-                                  defaultPhone: contract.phone || "",
-                                  defaultMessage: `Halo *${contract.tenantName}*,\n\nIni adalah pengingat resmi dari pengelola BUMDES "${settings?.bumdes_name || 'BUMDES'}". Masa kontrak sewa untuk *kavling ${contract.type} nomor ${contract.number}* ${remainingText}.\n\nMohon segera mengunjungi kantor BUMDES untuk mengurus perpanjangan sewa atau melunasi iuran Anda. Terima kasih.`
-                                })
-                                setShowWaModal(true)
-                              }}
-                              className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-650 hover:text-emerald-700 border border-emerald-150 rounded-xl transition shadow-sm active:scale-95"
-                              title="Kirim Notifikasi WhatsApp"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={activeTab === "lapak" ? 8 : 7} className="px-6 py-10 text-center text-slate-400 font-medium">
-                      Tidak ada data kontrak aktif untuk sewa {activeTab}.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* --------------------- MODALS --------------------- */}
-
-      {/* 1. Modal: Create Contract */}
-      {activeModal === "contract" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-4">
-              <Map className="w-5 h-5 text-emerald-600" />
-              Kontrak Sewa Lahan Baru
-            </h3>
-
-            {formError && (
-              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-                <span>{formError}</span>
-              </div>
-            )}
-            {formSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
-                <span>{formSuccess}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateContract} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Kategori Lahan</label>
-                  <select
-                    value={contractType}
-                    onChange={(e) => setContractType(e.target.value as any)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none"
-                  >
-                    <option value="WARUNG">Warung Desa</option>
-                    <option value="LAPAK">Lapak PKL</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Nomor Kavling</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: A-12"
-                    value={kavlingNumber}
-                    onChange={(e) => setKavlingNumber(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none rounded-xl text-xs text-slate-800 font-bold"
-                  />
-                </div>
-              </div>
-
-              {contractType === "LAPAK" && (
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Shift Sewa Lapak</label>
-                  <select
-                    value={lapakShift}
-                    onChange={(e) => setLapakShift(e.target.value as any)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none"
-                  >
-                    <option value="PAGI">Pagi (Pasar/Kuliner Pagi)</option>
-                    <option value="MALAM">Malam (Kuliner Malam/Angkringan)</option>
-                  </select>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase block">Nama Pedagang</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Nama lengkap penyewa lahan"
-                  value={tenantName}
-                  onChange={(e) => setTenantName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none rounded-xl text-xs text-slate-800"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">No HP / WhatsApp</label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: 08123456789"
-                    value={tenantPhone}
-                    onChange={(e) => setTenantPhone(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none rounded-xl text-xs text-slate-800"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">
-                    Tarif Sewa ({contractType === "WARUNG" ? "Tahunan" : "Bulanan"})
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="Rp"
-                    value={rentFee}
-                    onChange={(e) => setRentFee(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none rounded-xl text-xs text-slate-800 font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase block">Tanggal Mulai Kontrak</label>
-                <input
-                  type="date"
-                  required
-                  value={startDateStr}
-                  onChange={(e) => setStartDateStr(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none"
-                />
-              </div>
-
-              {endDateStr && (
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-[10px] text-slate-500 font-semibold">
-                  <span className="font-bold text-slate-700 block text-[9px]">Jatuh Tempo Otomatis:</span>
-                  Kontrak ini akan berakhir pada tanggal <b>{new Date(endDateStr).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</b>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Pembayaran Awal (Rp)</label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={initialPayment}
-                    onChange={(e) => setInitialPayment(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none rounded-xl text-xs text-slate-800 font-bold"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Keterangan Periode</label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: Sewa Th 2026 / Sewa Juni"
-                    value={paymentPeriod}
-                    onChange={(e) => setPaymentPeriod(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none rounded-xl text-xs text-slate-800"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={formSubmitLoading}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all active:scale-95"
-              >
-                {formSubmitLoading ? "Memproses..." : "Aktifkan Kontrak"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Modal: Pay Lease Rent */}
-      {activeModal === "payment" && selectedContract && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
-              <DollarSign className="w-5 h-5 text-emerald-600" />
-              Penerimaan Iuran Sewa Lahan
-            </h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">
-              Pedagang: {selectedContract.tenantName} ({selectedContract.type} Kav {selectedContract.number})
-            </p>
-
-            {formError && (
-              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-                <span>{formError}</span>
-              </div>
-            )}
-            {formSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
-                <span>{formSuccess}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreatePayment} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Jumlah Pembayaran Iuran (Rp)</label>
-                <input
-                  type="number"
-                  required
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none rounded-xl text-xs text-slate-800 font-bold"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Keterangan Periode Pembayaran</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Sewa Bulan Juni 2026 / Sewa Tahun Ke-2"
-                  value={payPeriod}
-                  onChange={(e) => setPayPeriod(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none rounded-xl text-xs text-slate-800 font-medium"
-                />
-              </div>
-
-              {/* History payments */}
-              {selectedContract.payments.length > 0 && (
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Riwayat Pembayaran Sebelumnya:</span>
-                  <div className="max-h-28 overflow-y-auto space-y-1 pr-1 border border-slate-100 rounded-xl p-2 bg-slate-50 text-[10px] font-semibold text-slate-655">
-                    {selectedContract.payments.map((p) => (
-                      <div key={p.id} className="flex justify-between items-center py-1 border-b border-slate-200/50 last:border-0">
-                        <span>{p.periodCovered} ({new Date(p.date).toLocaleDateString("id-ID")})</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-emerald-700">{formatRupiah(p.amount)}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setReceiptData({
-                                title: `Iuran Sewa Lahan: ${selectedContract.type} ${selectedContract.number}`,
-                                customerName: selectedContract.tenantName,
-                                customerCode: `Kavling ${selectedContract.number}`,
-                                date: p.date,
-                                amount: p.amount,
-                                details: [
-                                  { label: "Kavling Lahan", value: `${selectedContract.type} ${selectedContract.number}` },
-                                  { label: "Penyewa/Pedagang", value: selectedContract.tenantName },
-                                  { label: "Periode Sewa Dibayar", value: p.periodCovered }
-                                ],
-                                accounts: [
-                                  { code: "1-1100", name: "Kas BUMDES", type: "DEBIT" },
-                                  { code: "4-1200", name: "Pendapatan Sewa Kios / Tanah Lahan", type: "CREDIT" }
-                                ]
-                              })
-                              setShowReceipt(true)
-                            }}
-                            className="p-1.5 bg-slate-250 hover:bg-slate-200 text-slate-600 rounded transition"
-                            title="Cetak Kuitansi"
-                          >
-                            <Printer className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex w-full gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+                      className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all active:scale-95"
+                    >
+                      {confirmState.cancelText}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmState.onConfirm}
+                      className={`flex-1 py-2.5 text-white font-bold rounded-xl text-xs transition-all active:scale-95 shadow-sm ${
+                        confirmState.color === "rose" ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/10" :
+                        confirmState.color === "amber" ? "bg-amber-600 hover:bg-amber-700 shadow-amber-600/10" :
+                        "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10"
+                      }`}
+                    >
+                      {confirmState.confirmText}
+                    </button>
                   </div>
                 </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={formSubmitLoading}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all active:scale-95"
-              >
-                {formSubmitLoading ? "Memproses..." : "Simpan Transaksi"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Modal: Edit Contract */}
-      {activeModal === "edit_contract" && selectedContract && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
-              <Edit2 className="w-5 h-5 text-amber-500" />
-              Edit Informasi Kontrak Sewa Lahan
-            </h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">
-              Kavling: {selectedContract.type} {selectedContract.number}
-            </p>
-
-            {formError && (
-              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-                <span>{formError}</span>
-              </div>
-            )}
-            {formSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
-                <span>{formSuccess}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleUpdateContract} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Nama Pedagang / Penyewa</label>
-                <input
-                  type="text"
-                  required
-                  value={editTenantName}
-                  onChange={(e) => setEditTenantName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 rounded-xl text-xs text-slate-800 font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">No HP / WhatsApp</label>
-                  <input
-                    type="text"
-                    value={editTenantPhone}
-                    onChange={(e) => setEditTenantPhone(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 rounded-xl text-xs text-slate-800"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                    Tarif Sewa ({selectedContract.type === "WARUNG" ? "Tahunan" : "Bulanan"})
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={editRentFee}
-                    onChange={(e) => setEditRentFee(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 rounded-xl text-xs text-slate-800 font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setActiveModal(null)}
-                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all active:scale-95"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={formSubmitLoading}
-                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all active:scale-95"
-                >
-                  {formSubmitLoading ? "Menyimpan..." : "Simpan Perubahan"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Modal: Custom Confirmation */}
-      {confirmState.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-sm shadow-2xl p-6 relative">
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className={`p-3.5 rounded-full ${
-                confirmState.color === "rose" ? "bg-rose-50 text-rose-600" :
-                confirmState.color === "amber" ? "bg-amber-50 text-amber-600" :
-                "bg-emerald-50 text-emerald-600"
-              }`}>
-                {confirmState.color === "rose" ? (
-                  <AlertCircle className="w-8 h-8" />
-                ) : confirmState.color === "amber" ? (
-                  <Info className="w-8 h-8" />
-                ) : (
-                  <CheckCircle className="w-8 h-8" />
-                )}
-              </div>
-              
-              <div className="space-y-1">
-                <h3 className="font-bold text-slate-900 text-base">{confirmState.title}</h3>
-                <p className="text-slate-500 text-xs font-medium px-2 leading-relaxed">
-                  {confirmState.message}
-                </p>
-              </div>
-
-              <div className="flex w-full gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all active:scale-95"
-                >
-                  {confirmState.cancelText}
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmState.onConfirm}
-                  className={`flex-1 py-2.5 text-white font-bold rounded-xl text-xs transition-all active:scale-95 shadow-sm ${
-                    confirmState.color === "rose" ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/10" :
-                    confirmState.color === "amber" ? "bg-amber-600 hover:bg-amber-700 shadow-amber-600/10" :
-                    "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10"
-                  }`}
-                >
-                  {confirmState.confirmText}
-                </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* POS Thermal Receipt Render Overlay */}
-      <KwitansiModal
-        isOpen={showReceipt}
-        onClose={() => setShowReceipt(false)}
-        bumdesName={settings?.bumdes_name}
-        locationText={settings?.village_name ? `Desa ${settings.village_name}, Kec. ${settings.district_name}` : ""}
-        {...receiptData}
-      />
+          {/* POS Receipt Overlay */}
+          <KwitansiModal
+            isOpen={showReceipt}
+            onClose={() => setShowReceipt(false)}
+            bumdesName={settings?.bumdes_name}
+            locationText={settings?.village_name ? `Desa ${settings.village_name}, Kec. ${settings.district_name}` : ""}
+            {...receiptData}
+          />
 
-      {/* WhatsApp Message Reminder Dialog */}
-      {waModalData && (
-        <WaNotificationModal
-          isOpen={showWaModal}
-          onClose={() => {
-            setShowWaModal(false)
-            setWaModalData(null)
-          }}
-          {...waModalData}
-        />
-      )}
-
+          {/* WhatsApp Message Reminder Dialog */}
+          {waModalData && (
+            <WaNotificationModal
+              isOpen={showWaModal}
+              onClose={() => {
+                setShowWaModal(false)
+                setWaModalData(null)
+              }}
+              {...waModalData}
+            />
+          )}
         </div>
       ) : (
         <div className="print-area bg-white text-slate-800 p-8 min-h-screen font-serif text-[11px] leading-relaxed">
@@ -1359,37 +737,37 @@ export default function SewaLahanPage() {
               {/* Rincian Pemasukan */}
               <div className="space-y-2">
                 <h3 className="font-bold text-xs border-b border-slate-300 pb-1 uppercase">I. PENERIMAAN / PEMASUKAN UNIT</h3>
-                <table className="w-full border-collapse border border-slate-350 text-[10px]">
+                <table className="w-full border-collapse border border-slate-300 text-[10px]">
                   <thead>
                     <tr className="bg-slate-50 text-slate-700 font-bold">
-                      <th className="border border-slate-350 px-2 py-1.5 text-center w-8">No</th>
-                      <th className="border border-slate-350 px-2 py-1.5 text-left">Tanggal</th>
-                      <th className="border border-slate-350 px-2 py-1.5 text-left">Pedagang</th>
-                      <th className="border border-slate-350 px-2 py-1.5 text-left">Kavling</th>
-                      <th className="border border-slate-350 px-2 py-1.5 text-left">Keterangan Periode</th>
-                      <th className="border border-slate-350 px-2 py-1.5 text-right">Nominal</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-center w-8">No</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-left">Tanggal</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-left">Pedagang</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-left">Kavling</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-left">Keterangan Periode</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-right">Nominal</th>
                     </tr>
                   </thead>
                   <tbody>
                     {lahanReportData.payments.length > 0 ? (
                       lahanReportData.payments.map((p, index) => (
                         <tr key={p.id}>
-                          <td className="border border-slate-350 px-2 py-1.5 text-center">{index + 1}</td>
-                          <td className="border border-slate-350 px-2 py-1.5">{new Date(p.date).toLocaleDateString("id-ID")}</td>
-                          <td className="border border-slate-350 px-2 py-1.5 font-bold">{p.tenantName}</td>
-                          <td className="border border-slate-350 px-2 py-1.5">{p.type} {p.kavlingNumber}</td>
-                          <td className="border border-slate-350 px-2 py-1.5">{p.periodCovered}</td>
-                          <td className="border border-slate-350 px-2 py-1.5 text-right">{formatRupiah(p.amount)}</td>
+                          <td className="border border-slate-300 px-2 py-1.5 text-center">{index + 1}</td>
+                          <td className="border border-slate-300 px-2 py-1.5">{new Date(p.date).toLocaleDateString("id-ID")}</td>
+                          <td className="border border-slate-300 px-2 py-1.5 font-bold">{p.tenantName}</td>
+                          <td className="border border-slate-300 px-2 py-1.5">{p.type} {p.kavlingNumber}</td>
+                          <td className="border border-slate-300 px-2 py-1.5">{p.periodCovered}</td>
+                          <td className="border border-slate-300 px-2 py-1.5 text-right">{formatRupiah(p.amount)}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="border border-slate-350 px-2 py-8 text-center text-slate-400">Tidak ada pemasukan tercatat.</td>
+                        <td colSpan={6} className="border border-slate-300 px-2 py-8 text-center text-slate-400">Tidak ada pemasukan tercatat.</td>
                       </tr>
                     )}
                     <tr className="font-bold bg-slate-50">
-                      <td colSpan={5} className="border border-slate-350 px-2 py-1.5 text-right uppercase">Total Pemasukan:</td>
-                      <td className="border border-slate-350 px-2 py-1.5 text-right">{formatRupiah(lahanReportData.payments.reduce((sum, p) => sum + p.amount, 0))}</td>
+                      <td colSpan={5} className="border border-slate-300 px-2 py-1.5 text-right uppercase">Total Pemasukan:</td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right">{formatRupiah(lahanReportData.payments.reduce((sum, p) => sum + p.amount, 0))}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1398,35 +776,35 @@ export default function SewaLahanPage() {
               {/* Rincian Pengeluaran */}
               <div className="space-y-2">
                 <h3 className="font-bold text-xs border-b border-slate-300 pb-1 uppercase">II. PENGELUARAN OPERASIONAL UNIT</h3>
-                <table className="w-full border-collapse border border-slate-350 text-[10px]">
+                <table className="w-full border-collapse border border-slate-300 text-[10px]">
                   <thead>
                     <tr className="bg-slate-50 text-slate-700 font-bold">
-                      <th className="border border-slate-350 px-2 py-1.5 text-center w-8">No</th>
-                      <th className="border border-slate-350 px-2 py-1.5 text-left">Tanggal</th>
-                      <th className="border border-slate-350 px-2 py-1.5 text-left">Keterangan</th>
-                      <th className="border border-slate-350 px-2 py-1.5 text-left">Kode Akun</th>
-                      <th className="border border-slate-350 px-2 py-1.5 text-right">Nominal</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-center w-8">No</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-left">Tanggal</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-left">Keterangan</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-left">Kode Akun</th>
+                      <th className="border border-slate-300 px-2 py-1.5 text-right">Nominal</th>
                     </tr>
                   </thead>
                   <tbody>
                     {lahanReportData.expenses.length > 0 ? (
                       lahanReportData.expenses.map((e, index) => (
                         <tr key={e.id}>
-                          <td className="border border-slate-350 px-2 py-1.5 text-center">{index + 1}</td>
-                          <td className="border border-slate-350 px-2 py-1.5">{new Date(e.date).toLocaleDateString("id-ID")}</td>
-                          <td className="border border-slate-350 px-2 py-1.5">{e.description}</td>
-                          <td className="border border-slate-350 px-2 py-1.5">{e.accountCode}</td>
-                          <td className="border border-slate-350 px-2 py-1.5 text-right">{formatRupiah(e.amount)}</td>
+                          <td className="border border-slate-300 px-2 py-1.5 text-center">{index + 1}</td>
+                          <td className="border border-slate-300 px-2 py-1.5">{new Date(e.date).toLocaleDateString("id-ID")}</td>
+                          <td className="border border-slate-300 px-2 py-1.5">{e.description}</td>
+                          <td className="border border-slate-300 px-2 py-1.5">{e.accountCode}</td>
+                          <td className="border border-slate-300 px-2 py-1.5 text-right">{formatRupiah(e.amount)}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={5} className="border border-slate-350 px-2 py-8 text-center text-slate-400">Tidak ada pengeluaran operasional tercatat.</td>
+                        <td colSpan={5} className="border border-slate-300 px-2 py-8 text-center text-slate-400">Tidak ada pengeluaran operasional tercatat.</td>
                       </tr>
                     )}
                     <tr className="font-bold bg-slate-50">
-                      <td colSpan={4} className="border border-slate-350 px-2 py-1.5 text-right uppercase">Total Pengeluaran:</td>
-                      <td className="border border-slate-350 px-2 py-1.5 text-right">{formatRupiah(lahanReportData.expenses.reduce((sum, e) => sum + e.amount, 0))}</td>
+                      <td colSpan={4} className="border border-slate-300 px-2 py-1.5 text-right uppercase">Total Pengeluaran:</td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right">{formatRupiah(lahanReportData.expenses.reduce((sum, e) => sum + e.amount, 0))}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1454,20 +832,20 @@ export default function SewaLahanPage() {
                 </p>
               </div>
 
-              <table className="w-full border-collapse border border-slate-350 text-[11px]">
+              <table className="w-full border-collapse border border-slate-300 text-[11px]">
                 <thead>
                   <tr className="bg-slate-50 text-slate-700 font-bold">
-                    <th className="border border-slate-350 px-3 py-2 text-center w-8">No</th>
-                    <th className="border border-slate-350 px-3 py-2 text-center">No. Kavling</th>
-                    <th className="border border-slate-350 px-3 py-2 text-left">Nama Penyewa / Pedagang</th>
-                    <th className="border border-slate-350 px-3 py-2 text-left">No. Telepon</th>
+                    <th className="border border-slate-300 px-3 py-2 text-center w-8">No</th>
+                    <th className="border border-slate-300 px-3 py-2 text-center">No. Kavling</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">Nama Penyewa / Pedagang</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">No. Telepon</th>
                     {activeTab === "lapak" && (
-                      <th className="border border-slate-350 px-3 py-2 text-center">Shift</th>
+                      <th className="border border-slate-300 px-3 py-2 text-center">Shift</th>
                     )}
-                    <th className="border border-slate-350 px-3 py-2 text-right">Tarif Sewa</th>
-                    <th className="border border-slate-350 px-3 py-2 text-left">Periode Sewa (Masa Kontrak)</th>
-                    <th className="border border-slate-350 px-3 py-2 text-center">Sisa Hari</th>
-                    <th className="border border-slate-350 px-3 py-2 text-center">Status</th>
+                    <th className="border border-slate-300 px-3 py-2 text-right">Tarif Sewa</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">Periode Sewa (Masa Kontrak)</th>
+                    <th className="border border-slate-300 px-3 py-2 text-center">Sisa Hari</th>
+                    <th className="border border-slate-300 px-3 py-2 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1477,21 +855,21 @@ export default function SewaLahanPage() {
                     const daysRemaining = calculateDaysRemaining(c.periodEnd)
                     return (
                       <tr key={c.id} className="hover:bg-slate-50/50">
-                        <td className="border border-slate-355 px-3 py-2 text-center">{index + 1}</td>
-                        <td className="border border-slate-355 px-3 py-2 text-center font-bold text-slate-800">{c.number}</td>
-                        <td className="border border-slate-355 px-3 py-2 font-medium">{c.tenantName}</td>
-                        <td className="border border-slate-355 px-3 py-2">{c.phone || "-"}</td>
+                        <td className="border border-slate-300 px-3 py-2 text-center">{index + 1}</td>
+                        <td className="border border-slate-300 px-3 py-2 text-center font-bold text-slate-800">{c.number}</td>
+                        <td className="border border-slate-300 px-3 py-2 font-medium">{c.tenantName}</td>
+                        <td className="border border-slate-300 px-3 py-2">{c.phone || "-"}</td>
                         {activeTab === "lapak" && (
-                          <td className="border border-slate-355 px-3 py-2 text-center font-semibold">{c.shift}</td>
+                          <td className="border border-slate-300 px-3 py-2 text-center font-semibold">{c.shift}</td>
                         )}
-                        <td className="border border-slate-355 px-3 py-2 text-right font-medium">{formatRupiah(c.fee)}</td>
-                        <td className="border border-slate-355 px-3 py-2">
+                        <td className="border border-slate-300 px-3 py-2 text-right font-medium">{formatRupiah(c.fee)}</td>
+                        <td className="border border-slate-300 px-3 py-2">
                           {pStart} s.d {pEnd}
                         </td>
-                        <td className="border border-slate-355 px-3 py-2 text-center font-semibold">
+                        <td className="border border-slate-300 px-3 py-2 text-center font-semibold">
                           {daysRemaining > 0 ? `${daysRemaining} Hari` : "Habis"}
                         </td>
-                        <td className="border border-slate-355 px-3 py-2 text-center">
+                        <td className="border border-slate-300 px-3 py-2 text-center">
                           <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${c.status === "ACTIVE" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
                             {c.status}
                           </span>
@@ -1500,13 +878,13 @@ export default function SewaLahanPage() {
                     )
                   })}
                   <tr className="bg-slate-50 font-bold">
-                    <td colSpan={activeTab === "lapak" ? 5 : 4} className="border border-slate-350 px-3 py-2 text-right uppercase">Total Seluruh Sewa:</td>
-                    <td className="border border-slate-350 px-3 py-2 text-right">
+                    <td colSpan={activeTab === "lapak" ? 5 : 4} className="border border-slate-300 px-3 py-2 text-right uppercase">Total Seluruh Sewa:</td>
+                    <td className="border border-slate-300 px-3 py-2 text-right">
                       {formatRupiah(filteredContracts.reduce((sum, c) => sum + c.fee, 0))}
                     </td>
-                    <td className="border border-slate-350 px-3 py-2"></td>
-                    <td className="border border-slate-350 px-3 py-2"></td>
-                    <td className="border border-slate-350 px-3 py-2"></td>
+                    <td className="border border-slate-300 px-3 py-2"></td>
+                    <td className="border border-slate-300 px-3 py-2"></td>
+                    <td className="border border-slate-300 px-3 py-2"></td>
                   </tr>
                 </tbody>
               </table>

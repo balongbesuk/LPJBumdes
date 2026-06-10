@@ -330,7 +330,7 @@ export default function UsersTab() {
 
       {/* Info footer */}
       <div className="text-[10px] text-slate-400 font-semibold leading-relaxed">
-        Total {users.length} akun pengguna terdaftar. Password disimpan menggunakan hash SHA-256 dan tidak dapat dilihat kembali. Untuk mereset password, gunakan tombol Edit lalu isi field password baru.
+        Total {users.length} akun pengguna terdaftar. Password disimpan menggunakan hash Bcrypt dan tidak dapat dilihat kembali. Untuk mereset password, gunakan tombol Edit lalu isi field password baru.
       </div>
 
       {/* ===== CREATE/EDIT MODAL ===== */}

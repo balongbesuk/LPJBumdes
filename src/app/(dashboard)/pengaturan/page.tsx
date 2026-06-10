@@ -44,6 +44,9 @@ export default function PengaturanPage() {
   const [restoring, setRestoring] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [showConfirmRestore, setShowConfirmRestore] = useState(false)
+  const [showConfirmReset, setShowConfirmReset] = useState(false)
+  const [resetConfirmInput, setResetConfirmInput] = useState("")
+  const [resetting, setResetting] = useState(false)
   
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -204,6 +207,34 @@ export default function PengaturanPage() {
       setShowConfirmRestore(false)
     } finally {
       setRestoring(false)
+    }
+  }
+
+  const handleResetDatabase = async () => {
+    if (resetConfirmInput !== "RESET") return
+    setResetting(true)
+    setErrorMsg(null)
+    setSuccessMsg(null)
+    try {
+      const res = await fetch("/api/pengaturan/reset", {
+        method: "POST"
+      })
+      const result = await res.json()
+      if (result.success) {
+        setSuccessMsg("Database berhasil di-reset! Mengalihkan ke login...")
+        localStorage.removeItem("bumdes_user")
+        setShowConfirmReset(false)
+        setTimeout(() => {
+          window.location.href = "/login"
+        }, 2000)
+      } else {
+        throw new Error(result.error || "Gagal mereset database")
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message)
+      setShowConfirmReset(false)
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -551,7 +582,7 @@ export default function PengaturanPage() {
 
       {/* Tab: Pencadangan & Pemulihan */}
       {activeTab === "backup" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
           {/* Card: Unduh Backup */}
           <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-3xl shadow-sm space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
@@ -620,7 +651,7 @@ export default function PengaturanPage() {
               <div className="p-4 bg-rose-50/50 border border-rose-100 rounded-2xl text-xs font-semibold text-rose-800 flex items-start gap-2.5">
                 <ShieldAlert className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold">PERINGATAN KERAS:</span> Tindakan ini bersifat destruktif. Database aktif saat ini akan tertimpa sepenuhnya oleh berkas yang diunggah.
+                  <span className="font-bold">PERINGATAN:</span> Tindakan ini bersifat destruktif. Database aktif saat ini akan tertimpa sepenuhnya oleh berkas yang diunggah.
                 </div>
               </div>
 
@@ -675,6 +706,45 @@ export default function PengaturanPage() {
               >
                 <Upload className="w-4 h-4" />
                 Unggah & Pulihkan Database
+              </button>
+            </div>
+          </div>
+
+          {/* Card: Reset Database */}
+          <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-3xl shadow-sm space-y-6 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-600">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-slate-800 font-bold text-sm tracking-tight">
+                  Reset Database (Mulai Baru)
+                </h2>
+                <p className="text-slate-400 text-xs font-semibold mt-1 leading-relaxed">
+                  Hapus permanen seluruh transaksi keuangan, simpanan, pinjaman, sewa, surat, inventaris, dan audit log. Profil BUMDES akan di-reset untuk menampilkan kembali Setup Wizard.
+                </p>
+              </div>
+
+              {/* Hard warning box */}
+              <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-semibold text-rose-800 flex items-start gap-2.5">
+                <ShieldAlert className="w-5 h-5 text-rose-655 shrink-0 mt-0.5 animate-pulse" />
+                <div>
+                  <span className="font-bold text-rose-900 block">DANGER ZONE:</span> Tindakan ini tidak dapat dibatalkan. Seluruh data BUMDES akan dikembalikan ke kondisi awal pabrik.
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-slate-50">
+              <button
+                type="button"
+                onClick={() => {
+                  setResetConfirmInput("")
+                  setShowConfirmReset(true)
+                }}
+                className="w-full py-3.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-2xl text-xs shadow-md shadow-rose-600/10 transition-all flex items-center justify-center gap-2 active:scale-98"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Reset Seluruh Database
               </button>
             </div>
           </div>
@@ -739,6 +809,69 @@ export default function PengaturanPage() {
                   <>
                     <Upload className="w-4 h-4" />
                     Ya, Pulihkan Data
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Reset Dialog Overlay */}
+      {showConfirmReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-white border border-slate-150 p-6 md:p-8 rounded-3xl shadow-2xl space-y-6">
+            <div className="flex gap-4 items-start">
+              <div className="w-12 h-12 rounded-2xl bg-rose-55 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <ShieldAlert className="w-6 h-6 animate-pulse" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-slate-900 font-bold text-base tracking-tight">
+                  Hapus Permanen Seluruh Database?
+                </h3>
+                <p className="text-slate-400 text-xs font-semibold leading-relaxed">
+                  Tindakan ini akan menghapus seluruh data transaksi, simpanan, pinjaman, sewa, aset, dokumen, dan riwayat audit log. Anda akan dialihkan kembali ke Setup Wizard.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                Ketik kata <span className="text-rose-600 font-extrabold">RESET</span> untuk mengonfirmasi:
+              </label>
+              <input
+                type="text"
+                value={resetConfirmInput}
+                onChange={(e) => setResetConfirmInput(e.target.value)}
+                placeholder="RESET"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-rose-500 focus:bg-white focus:outline-none rounded-xl text-sm font-bold text-slate-800 tracking-wider text-center"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={resetting}
+                onClick={() => setShowConfirmReset(false)}
+                className="flex-1 py-3 px-4 bg-slate-50 hover:bg-slate-100 disabled:opacity-50 text-slate-600 font-bold border border-slate-200 rounded-2xl text-xs transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={resetting || resetConfirmInput !== "RESET"}
+                onClick={handleResetDatabase}
+                className="flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-transparent text-white font-bold rounded-2xl text-xs shadow-md shadow-rose-600/10 transition flex items-center justify-center gap-1.5"
+              >
+                {resetting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Mereset Data...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    Ya, Reset Semua
                   </>
                 )}
               </button>

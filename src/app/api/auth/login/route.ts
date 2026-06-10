@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import * as crypto from "crypto"
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex")
-}
+import { comparePassword, hashPassword, isLegacyHash } from "@/lib/auth"
+import { signToken, AUTH_COOKIE_NAME, getAuthCookieOptions } from "@/lib/jwt"
 
 export async function POST(request: Request) {
   try {
@@ -29,15 +26,33 @@ export async function POST(request: Request) {
       )
     }
 
-    const passwordHash = hashPassword(password)
-    if (user.passwordHash !== passwordHash) {
+    // Verify password (supports both bcrypt and legacy SHA-256)
+    const isValid = await comparePassword(password, user.passwordHash)
+    if (!isValid) {
       return NextResponse.json(
         { success: false, error: "Password salah" },
         { status: 401 }
       )
     }
 
-    // Success
+    // Auto-migrate legacy SHA-256 hash to bcrypt on successful login
+    if (isLegacyHash(user.passwordHash)) {
+      const bcryptHash = await hashPassword(password)
+      await db.user.update({
+        where: { id: user.id },
+        data: { passwordHash: bcryptHash },
+      })
+    }
+
+    // Generate JWT token
+    const token = await signToken({
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+    })
+
+    // Build response with user data (for client-side display)
     const response = NextResponse.json({
       success: true,
       data: {
@@ -48,7 +63,12 @@ export async function POST(request: Request) {
       }
     })
 
-    // Set cookie for middleware role verification
+    // Set secure HttpOnly JWT cookie
+    const cookieOptions = getAuthCookieOptions()
+    response.cookies.set(AUTH_COOKIE_NAME, token, cookieOptions)
+
+    // Also set legacy cookie for backward compatibility during transition
+    // This ensures client-side code that reads bumdes_user still works
     response.cookies.set("bumdes_user", JSON.stringify({
       id: user.id,
       username: user.username,
@@ -56,8 +76,8 @@ export async function POST(request: Request) {
       role: user.role
     }), {
       path: "/",
-      httpOnly: false, // client-side access allowed for parsing/deletion on logout
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 7
     })
 
     return response

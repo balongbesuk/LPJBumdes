@@ -3,31 +3,34 @@
 import React, { useState, useEffect } from "react"
 import {
   Coins,
-  Users,
   Search,
   Plus,
   ArrowDownRight,
   ArrowUpRight,
   Calculator,
   UserPlus,
-  TrendingDown,
   Clock,
   CheckCircle,
   AlertCircle,
   X,
-  CreditCard,
-  FileText,
   Printer,
-  MessageCircle,
   Edit2,
   Trash2,
   UserMinus,
-  UserCheck
+  UserCheck,
 } from "lucide-react"
 import { formatRupiah } from "@/lib/utils"
 import KwitansiModal from "@/components/KwitansiModal"
 import WaNotificationModal from "@/components/WaNotificationModal"
 import { useSettings } from "@/context/SettingsContext"
+
+// Subcomponents
+import MemberTab from "./components/MemberTab"
+import LoanTab from "./components/LoanTab"
+import MemberModal from "./components/MemberModal"
+import SavingModal from "./components/SavingModal"
+import LoanModal from "./components/LoanModal"
+import RepaymentModal from "./components/RepaymentModal"
 
 interface Member {
   id: string
@@ -60,7 +63,7 @@ interface Loan {
 export default function SimpanPinjamPage() {
   const settings = useSettings()
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<"members" | "loans" | "transactions">("members")
+  const [activeTab, setActiveTab] = useState<"members" | "loans">("members")
   const [memberStatusFilter, setMemberStatusFilter] = useState<"active" | "inactive">("active")
   
   // Data lists
@@ -318,7 +321,6 @@ export default function SimpanPinjamPage() {
     })
   }
 
-  // Handle Form Submissions
   const handleCreateMember = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormSubmitLoading(true)
@@ -455,12 +457,12 @@ export default function SimpanPinjamPage() {
           type: loanType,
           principal: parseFloat(loanPrincipal),
           interestRate: parseFloat(loanInterest),
-          termMonths: parseInt(loanTerm, 10)
+          termMonths: parseInt(loanTerm)
         })
       })
       const result = await res.json()
       if (result.success) {
-        setFormSuccess(`Pencairan pinjaman senilai ${formatRupiah(result.data.principal)} berhasil disetujui!`)
+        setFormSuccess(`Kredit baru senilai ${formatRupiah(parseFloat(loanPrincipal))} berhasil dicairkan!`)
         
         // Open POS Receipt modal
         setReceiptData({
@@ -474,7 +476,11 @@ export default function SimpanPinjamPage() {
             { label: "Kategori Kredit", value: loanType },
             { label: "Pokok Pinjaman", value: parseFloat(loanPrincipal) },
             { label: "Suku Jasa Flat", value: `${loanInterest}% / bln` },
-            { label: "Jangka Waktu", value: `${loanTerm} Bulan` }
+            { label: "Jangka Waktu", value: `${loanTerm} Bulan` },
+            {
+              label: "Angsuran Bulanan",
+              value: (parseFloat(loanPrincipal) / parseInt(loanTerm)) + (parseFloat(loanPrincipal) * (parseFloat(loanInterest) / 100))
+            }
           ],
           accounts: [
             { code: loanType === "MASYARAKAT" ? "1-1400" : "1-1500", name: `Piutang Pinjaman ${loanType}`, type: "DEBIT" },
@@ -519,36 +525,34 @@ export default function SimpanPinjamPage() {
       })
       const result = await res.json()
       if (result.success) {
-        setFormSuccess(`Angsuran pinjaman berhasil dicatat!`)
+        setFormSuccess("Setoran angsuran kredit berhasil dicatat!")
         
         // Open POS Receipt modal
-        const principalPaidVal = parseFloat(repayPrincipal) || 0
-        const interestPaidVal = parseFloat(repayInterest) || 0
-        const totalRepayVal = principalPaidVal + interestPaidVal
-
         setReceiptData({
-          title: `Angsuran Kredit (${selectedLoan.type})`,
+          title: `Angsuran Pinjaman (${selectedLoan.type})`,
           customerName: selectedLoan.member.name,
           customerCode: selectedLoan.member.code,
           date: new Date(),
-          amount: totalRepayVal,
+          amount: parseFloat(repayPrincipal) + parseFloat(repayInterest),
           details: [
-            { label: "Nama Nasabah", value: selectedLoan.member.name },
-            { label: "Tipe Kredit", value: selectedLoan.type },
-            { label: "Pembayaran Pokok", value: principalPaidVal },
-            { label: "Pembayaran Jasa", value: interestPaidVal },
-            { label: "Sisa Pokok Hutang", value: Math.max(calculateRemainingPrincipal(selectedLoan) - principalPaidVal, 0) }
+            { label: "Nasabah", value: `${selectedLoan.member.name} (${selectedLoan.member.code})` },
+            { label: "Kategori Kredit", value: selectedLoan.type },
+            { label: "Pokok Angsuran", value: parseFloat(repayPrincipal) },
+            { label: "Jasa Bunga", value: parseFloat(repayInterest) },
+            { label: "Total Dibayarkan", value: parseFloat(repayPrincipal) + parseFloat(repayInterest) }
           ],
           accounts: [
             { code: "1-1100", name: "Kas BUMDES", type: "DEBIT" },
-            ...(principalPaidVal > 0 ? [{ code: selectedLoan.type === "MASYARAKAT" ? "1-1400" : "1-1500", name: `Piutang Pinjaman ${selectedLoan.type}`, type: "CREDIT" as const }] : []),
-            ...(interestPaidVal > 0 ? [{ code: "4-1100", name: "Pendapatan Jasa Simpan Pinjam", type: "CREDIT" as const }] : [])
+            { code: selectedLoan.type === "MASYARAKAT" ? "1-1400" : "1-1500", name: `Piutang Pinjaman ${selectedLoan.type}`, type: "CREDIT" },
+            { code: "4-1100", name: "Pendapatan Bunga Pinjaman (Unit SP)", type: "CREDIT" }
           ]
         })
         setTimeout(() => {
           setShowReceipt(true)
         }, 800)
 
+        setRepayPrincipal("")
+        setRepayInterest("")
         fetchData()
         setTimeout(() => {
           setActiveModal(null)
@@ -591,7 +595,7 @@ export default function SimpanPinjamPage() {
         <div className="fixed top-0 inset-x-0 bg-slate-900/90 text-white py-3 px-6 z-[100] flex items-center justify-between no-print backdrop-blur-sm">
           <span className="font-semibold text-xs flex items-center gap-2">
             <Printer className="w-4 h-4 text-emerald-400" />
-            Pratinjau Cetak: {printType === "savings" ? "Buku Bantu Simpanan" : "Buku Bantu Piutang"}
+            Pratinjau Cetak: Buku Pembantu Unit Simpan Pinjam
           </span>
           <div className="flex gap-2">
             <button
@@ -603,7 +607,7 @@ export default function SimpanPinjamPage() {
             </button>
             <button
               onClick={() => setPrintType(null)}
-              className="bg-slate-700 hover:bg-slate-650 text-white font-bold px-4 py-2 rounded-xl text-xs transition active:scale-95"
+              className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition active:scale-95"
             >
               Tutup Pratinjau
             </button>
@@ -614,906 +618,264 @@ export default function SimpanPinjamPage() {
       {!printType ? (
         <div className="space-y-6">
           {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Unit Simpan Pinjam</h1>
-          <p className="text-slate-400 text-xs font-semibold mt-1">
-            Kelola keanggotaan nasabah desa, tabungan wajib/pokok, serta pencairan dan angsuran pinjaman.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              setNewMemberName("")
-              setNewMemberPayPokok(true)
-              setFormError(null)
-              setFormSuccess(null)
-              setActiveModal("new_member")
-            }}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-2xl text-xs shadow-md shadow-emerald-600/10 transition-all active:scale-95"
-          >
-            <UserPlus className="w-4 h-4" />
-            Anggota Baru
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs & Search Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-1">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl w-fit">
-          <button
-            onClick={() => setActiveTab("members")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "members" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            <Users className="w-3.5 h-3.5 inline-block mr-1.5" />
-            Daftar Anggota
-          </button>
-          <button
-            onClick={() => setActiveTab("loans")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "loans" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            <Calculator className="w-3.5 h-3.5 inline-block mr-1.5" />
-            Kredit / Pinjaman
-          </button>
-        </div>
-
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Cari anggota atau nomor kode..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 focus:border-emerald-500 rounded-2xl text-xs focus:outline-none transition-all placeholder:text-slate-400 text-slate-700 shadow-sm"
-          />
-        </div>
-      </div>
-
-      {/* Tab Contents */}
-      {activeTab === "members" ? (
-        <div className="space-y-4 animate-fade-in">
-          {/* Sub-tabs for Member Status & Print Buttons */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setMemberStatusFilter("active")}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all border ${
-                  memberStatusFilter === "active"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-250 shadow-sm"
-                    : "bg-white text-slate-500 border-slate-200 hover:text-slate-900"
-                }`}
-              >
-                Anggota Aktif
-              </button>
-              <button
-                onClick={() => setMemberStatusFilter("inactive")}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all border ${
-                  memberStatusFilter === "inactive"
-                    ? "bg-rose-50 text-rose-700 border-rose-250 shadow-sm"
-                    : "bg-white text-slate-500 border-slate-200 hover:text-slate-900"
-                }`}
-              >
-                Anggota Nonaktif (Keluar)
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePrintSavings()}
-                className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-4 py-2 rounded-2xl text-xs shadow-sm transition-all active:scale-95 animate-fade-in"
-              >
-                <Printer className="w-4 h-4 text-emerald-600" />
-                Cetak Buku Bantu Simpanan
-              </button>
-              <button
-                onClick={() => handlePrintLoans()}
-                className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-4 py-2 rounded-2xl text-xs shadow-sm transition-all active:scale-95 animate-fade-in"
-              >
-                <Printer className="w-4 h-4 text-blue-600" />
-                Cetak Buku Bantu Piutang
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kode</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nama Anggota</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Simpanan Pokok</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Simpanan Wajib</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Total Tabungan</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 text-slate-700 text-xs">
-                {filteredMembers.length > 0 ? (
-                  filteredMembers.map((member) => (
-                    <tr key={member.id} className="hover:bg-slate-50/50 transition-all">
-                      <td className="px-6 py-4 font-bold text-slate-800">{member.code}</td>
-                      <td className="px-6 py-4 font-semibold text-slate-700">{member.name}</td>
-                      <td className="px-6 py-4 text-right font-medium text-slate-600">
-                        {formatRupiah(member.simpananPokok)}
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium text-slate-600">
-                        {formatRupiah(member.simpananWajib)}
-                      </td>
-                      <td className="px-6 py-4 text-right font-bold text-emerald-700">
-                        {formatRupiah(member.simpananPokok + member.simpananWajib)}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {member.isActive !== false ? (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setSelectedMember(member)
-                                  setSavingType("WAJIB")
-                                  setSavingFlow("MASUK")
-                                  setSavingAmount("")
-                                  setSavingDesc("")
-                                  setFormError(null)
-                                  setFormSuccess(null)
-                                  setActiveModal("saving")
-                                }}
-                                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-150 px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-sm transition-all"
-                              >
-                                <TrendingDown className="w-3 h-3 inline-block mr-1" />
-                                Simpanan
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSelectedMember(member)
-                                  setLoanType("MASYARAKAT")
-                                  setLoanPrincipal("")
-                                  setLoanInterest("1.0")
-                                  setLoanTerm("10")
-                                  setFormError(null)
-                                  setFormSuccess(null)
-                                  setActiveModal("loan")
-                                }}
-                                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-150 px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-sm transition-all"
-                              >
-                                <Calculator className="w-3 h-3 inline-block mr-1" />
-                                Beri Kredit
-                              </button>
-                              
-                              {/* Edit Nama Button */}
-                              <button
-                                onClick={() => {
-                                  setSelectedMember(member)
-                                  setEditMemberName(member.name)
-                                  setFormError(null)
-                                  setFormSuccess(null)
-                                  setActiveModal("edit_member")
-                                }}
-                                className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-550 border border-slate-200 rounded-xl transition"
-                                title="Edit Nama"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Keluarkan Anggota Button */}
-                              <button
-                                onClick={() => handleToggleMemberActive(member, false)}
-                                className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-150 rounded-xl transition"
-                                title="Keluarkan Anggota"
-                              >
-                                <UserMinus className="w-3.5 h-3.5" />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              {/* Aktifkan Kembali Button */}
-                              <button
-                                onClick={() => handleToggleMemberActive(member, true)}
-                                className="bg-emerald-55 hover:bg-emerald-100 text-emerald-800 border border-emerald-150 px-2.5 py-1.5 rounded-xl text-[10px] font-bold shadow-sm transition-all flex items-center gap-1"
-                              >
-                                <UserCheck className="w-3.5 h-3.5" />
-                                Aktifkan Kembali
-                              </button>
-
-                              {/* Delete Member Button */}
-                              <button
-                                onClick={() => handleDeleteMember(member)}
-                                className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-650 border border-rose-150 rounded-xl transition"
-                                title="Hapus Anggota"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-10 text-center text-slate-400 font-medium">
-                      Tidak ada data anggota ditemukan.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        </div>
-      ) : (
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nasabah</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipe</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Pokok Awal</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Bunga / Tenor</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Angsuran / bln</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Sisa Hutang</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 text-slate-700 text-xs">
-                {filteredLoans.length > 0 ? (
-                  filteredLoans.map((loan) => {
-                    const remaining = calculateRemainingPrincipal(loan)
-                    return (
-                      <tr key={loan.id} className="hover:bg-slate-50/50 transition-all">
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-800 leading-none">{loan.member.name}</div>
-                          <span className="text-[10px] font-bold text-slate-400 mt-1 block">{loan.member.code}</span>
-                        </td>
-                        <td className="px-6 py-4 font-bold">
-                          <span className={`inline-block px-2 py-0.5 rounded-full border text-[9px] ${
-                            loan.type === "POKTAN"
-                              ? "bg-amber-50 text-amber-800 border-amber-200"
-                              : "bg-purple-50 text-purple-800 border-purple-200"
-                          }`}>
-                            {loan.type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right font-semibold text-slate-700">
-                          {formatRupiah(loan.principal)}
-                        </td>
-                        <td className="px-6 py-4 text-center font-medium">
-                          {loan.interestRate}% / {loan.termMonths} bln
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-slate-850">
-                          {formatRupiah(loan.monthlyInstallment)}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-rose-700">
-                          {formatRupiah(remaining)}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[10px] font-bold ${
-                            loan.status === "ACTIVE"
-                              ? "bg-emerald-55 border border-emerald-100 text-emerald-800"
-                              : "bg-slate-50 border border-slate-200 text-slate-500"
-                          }`}>
-                            {loan.status === "ACTIVE" ? (
-                              <>
-                                <Clock className="w-3 h-3 text-emerald-600" />
-                                Aktif
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle className="w-3 h-3 text-slate-400" />
-                                Lunas
-                              </>
-                            )}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {loan.status === "ACTIVE" ? (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    setSelectedLoan(loan)
-                                    setFormError(null)
-                                    setFormSuccess(null)
-                                    setActiveModal("repayment")
-                                  }}
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-sm transition-all active:scale-95"
-                                >
-                                  Bayar Cicilan
-                                </button>
-
-                                {/* WhatsApp Reminder Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setWaModalData({
-                                      recipientName: loan.member.name,
-                                      defaultPhone: "",
-                                      defaultMessage: `Halo *${loan.member.name}*,\n\nIni adalah pengingat resmi dari pengelola unit Simpan Pinjam BUMDES "${settings?.bumdes_name || 'BUMDES'}".\n\nHarap diingat bahwa angsuran bulanan untuk pinjaman *${loan.type}* Anda senilai *${formatRupiah(loan.monthlyInstallment)}* telah jatuh tempo / wajib segera dibayarkan.\n\nSisa pinjaman Anda saat ini adalah *${formatRupiah(remaining)}*.\n\nMohon lakukan pembayaran di kantor BUMDES. Terima kasih.`
-                                    })
-                                    setShowWaModal(true)
-                                  }}
-                                  className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-650 hover:text-emerald-700 border border-emerald-150 rounded-xl transition shadow-sm"
-                                  title="Kirim Notifikasi WhatsApp"
-                                >
-                                  <MessageCircle className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            ) : (
-                              <span className="text-[10px] text-slate-400 font-bold mr-1">Lunas</span>
-                            )}
-
-                            {/* Reprint Loan Disbursal Receipt */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setReceiptData({
-                                  title: `Pencairan Kredit (${loan.type})`,
-                                  customerName: loan.member.name,
-                                  customerCode: loan.member.code,
-                                  date: loan.createdAt,
-                                  amount: loan.principal,
-                                  details: [
-                                    { label: "Nama Nasabah", value: loan.member.name },
-                                    { label: "Kategori Kredit", value: loan.type },
-                                    { label: "Pokok Pinjaman", value: loan.principal },
-                                    { label: "Suku Jasa Flat", value: `${loan.interestRate}% / bln` },
-                                    { label: "Jangka Waktu", value: `${loan.termMonths} Bulan` },
-                                    { label: "Angsuran Bulanan", value: loan.monthlyInstallment }
-                                  ],
-                                  accounts: [
-                                    { code: loan.type === "MASYARAKAT" ? "1-1400" : "1-1500", name: `Piutang Pinjaman ${loan.type}`, type: "DEBIT" },
-                                    { code: "1-1100", name: "Kas BUMDES", type: "CREDIT" }
-                                  ]
-                                })
-                                setShowReceipt(true)
-                              }}
-                              className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl transition shadow-sm"
-                              title="Cetak Struk Pencairan"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-10 text-center text-slate-400 font-medium">
-                      Tidak ada data pinjaman ditemukan.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* --------------------- MODALS --------------------- */}
-
-      {/* 1. Modal: New Member */}
-      {activeModal === "new_member" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-4">
-              <UserPlus className="w-5 h-5 text-emerald-600" />
-              Daftarkan Anggota Baru
-            </h3>
-
-            {formError && (
-              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-                <span>{formError}</span>
-              </div>
-            )}
-            {formSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
-                <span>{formSuccess}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateMember} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase block">Nama Lengkap</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Budi Santoso"
-                  value={newMemberName}
-                  onChange={(e) => setNewMemberName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white focus:outline-none rounded-xl text-xs text-slate-800"
-                />
-              </div>
-              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <input
-                  type="checkbox"
-                  id="bayar_pokok"
-                  checked={newMemberPayPokok}
-                  onChange={(e) => setNewMemberPayPokok(e.target.checked)}
-                  className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
-                />
-                <label htmlFor="bayar_pokok" className="text-xs text-slate-700 font-semibold cursor-pointer">
-                  Bayar Simpanan Pokok awal (Rp 50.000)
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={formSubmitLoading}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all active:scale-95"
-              >
-                {formSubmitLoading ? "Memproses..." : "Daftarkan Anggota"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Modal: Savings Deposit/Withdrawal */}
-      {activeModal === "saving" && selectedMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
-              <TrendingDown className="w-5 h-5 text-emerald-600" />
-              Transaksi Simpanan
-            </h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">
-              Anggota: {selectedMember.code} - {selectedMember.name}
-            </p>
-
-            {formError && (
-              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-                <span>{formError}</span>
-              </div>
-            )}
-            {formSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
-                <span>{formSuccess}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateSaving} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Jenis Simpanan</label>
-                  <select
-                    value={savingType}
-                    onChange={(e) => setSavingType(e.target.value as any)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none"
-                  >
-                    <option value="WAJIB">WAJIB</option>
-                    <option value="POKOK">POKOK</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Aliran Kas</label>
-                  <select
-                    value={savingFlow}
-                    onChange={(e) => setSavingFlow(e.target.value as any)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none"
-                  >
-                    <option value="MASUK">SETORAN (MASUK)</option>
-                    <option value="KELUAR">PENARIKAN (KELUAR)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Nominal Rupiah</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 text-xs font-bold">Rp</span>
-                  <input
-                    type="number"
-                    required
-                    placeholder="Contoh: 30000"
-                    value={savingAmount}
-                    onChange={(e) => setSavingAmount(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white focus:outline-none rounded-xl text-xs text-slate-800 font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Keterangan (Opsional)</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Setoran Wajib Bulan Juni"
-                  value={savingDesc}
-                  onChange={(e) => setSavingDesc(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white focus:outline-none rounded-xl text-xs text-slate-800"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={formSubmitLoading}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all active:scale-95"
-              >
-                {formSubmitLoading ? "Memproses..." : "Proses Simpanan"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Modal: Disburse Loan */}
-      {activeModal === "loan" && selectedMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
-              <Calculator className="w-5 h-5 text-blue-600" />
-              Pencairan Kredit Baru
-            </h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">
-              Nasabah: {selectedMember.code} - {selectedMember.name}
-            </p>
-
-            {formError && (
-              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-                <span>{formError}</span>
-              </div>
-            )}
-            {formSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
-                <span>{formSuccess}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateLoan} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase block">Kategori Pinjaman</label>
-                <select
-                  value={loanType}
-                  onChange={(e) => setLoanType(e.target.value as any)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none cursor-pointer"
-                >
-                  <option value="MASYARAKAT">Pinjaman Masyarakat</option>
-                  <option value="POKTAN">Pinjaman POKTAN (Kelompok Tani)</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Nominal Kredit (Principal)</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 text-xs font-bold">Rp</span>
-                  <input
-                    type="number"
-                    required
-                    placeholder="Contoh: 5000000"
-                    value={loanPrincipal}
-                    onChange={(e) => setLoanPrincipal(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white focus:outline-none rounded-xl text-xs text-slate-800 font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Bunga Flat / bln (%)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    required
-                    value={loanInterest}
-                    onChange={(e) => setLoanInterest(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-bold focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Tenor (Bulan)</label>
-                  <select
-                    value={loanTerm}
-                    onChange={(e) => setLoanTerm(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-bold focus:outline-none cursor-pointer"
-                  >
-                    <option value="3">3 Bulan</option>
-                    <option value="6">6 Bulan</option>
-                    <option value="10">10 Bulan</option>
-                    <option value="12">12 Bulan</option>
-                    <option value="24">24 Bulan</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Installment preview */}
-              {loanPrincipal && (
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">Cicilan Pokok Bulanan:</span>
-                    <span className="font-bold text-slate-700">
-                      {formatRupiah(parseFloat(loanPrincipal) / parseInt(loanTerm))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">Jasa Bunga Bulanan:</span>
-                    <span className="font-bold text-slate-700">
-                      {formatRupiah(parseFloat(loanPrincipal) * (parseFloat(loanInterest) / 100))}
-                    </span>
-                  </div>
-                  <div className="border-t border-slate-200 pt-2 flex justify-between text-xs font-bold">
-                    <span className="text-slate-600">Total Angsuran Per Bulan:</span>
-                    <span className="text-blue-700">
-                      {formatRupiah(
-                        (parseFloat(loanPrincipal) / parseInt(loanTerm)) +
-                        (parseFloat(loanPrincipal) * (parseFloat(loanInterest) / 100))
-                      )}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={formSubmitLoading}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md transition-all active:scale-95"
-              >
-                {formSubmitLoading ? "Memproses..." : "Cairkan Kredit"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Modal: Loan Repayment */}
-      {activeModal === "repayment" && selectedLoan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
-              Pencatatan Angsuran Kredit
-            </h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">
-              Nasabah: {selectedLoan.member.name} ({selectedLoan.member.code})
-            </p>
-
-            {formError && (
-              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-                <span>{formError}</span>
-              </div>
-            )}
-            {formSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
-                <span>{formSuccess}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateRepayment} className="space-y-4">
-              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col gap-1.5 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Total Pinjaman Awal:</span>
-                  <span className="font-bold text-slate-700">{formatRupiah(selectedLoan.principal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Sisa Pokok Saat Ini:</span>
-                  <span className="font-bold text-rose-700">{formatRupiah(calculateRemainingPrincipal(selectedLoan))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Bunga per Bulan:</span>
-                  <span className="font-bold text-slate-700">{selectedLoan.interestRate}%</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Bayar Pokok (Rupiah)</label>
-                  <input
-                    type="number"
-                    required
-                    value={repayPrincipal}
-                    onChange={(e) => setRepayPrincipal(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-bold focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase block">Bayar Jasa Bunga (Rupiah)</label>
-                  <input
-                    type="number"
-                    required
-                    value={repayInterest}
-                    onChange={(e) => setRepayInterest(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-bold focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Total preview */}
-              <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex justify-between items-center text-xs font-bold">
-                <span className="text-slate-650">Total Bayar Kas Masuk:</span>
-                <span className="text-emerald-700">
-                  {formatRupiah((parseFloat(repayPrincipal) || 0) + (parseFloat(repayInterest) || 0))}
-                </span>
-              </div>
-
-              <button
-                type="submit"
-                disabled={formSubmitLoading}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all active:scale-95"
-              >
-                {formSubmitLoading ? "Memproses..." : "Simpan Angsuran"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Modal: Edit Member */}
-      {activeModal === "edit_member" && selectedMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
-              <Edit2 className="w-5 h-5 text-emerald-600" />
-              Edit Informasi Anggota
-            </h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">
-              Kode Anggota: {selectedMember.code}
-            </p>
-
-            {formError && (
-              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-                <span>{formError}</span>
-              </div>
-            )}
-            {formSuccess && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
-                <span>{formSuccess}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleUpdateMember} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase block">Nama Lengkap</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Nama Lengkap Anggota"
-                  value={editMemberName}
-                  onChange={(e) => setEditMemberName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white focus:outline-none rounded-xl text-xs text-slate-800 font-bold"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={formSubmitLoading}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all active:scale-95"
-              >
-                {formSubmitLoading ? "Memproses..." : "Simpan Perubahan"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* POS Thermal Receipt Dialog Overlay */}
-      <KwitansiModal
-        isOpen={showReceipt}
-        onClose={() => setShowReceipt(false)}
-        bumdesName={settings?.bumdes_name}
-        locationText={settings?.village_name ? `Desa ${settings.village_name}, Kec. ${settings.district_name}` : ""}
-        {...receiptData}
-      />
-
-      {/* 6. Custom Confirmation / Alert Modal */}
-      {confirmState && confirmState.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-sm shadow-2xl p-6 relative">
-            <button
-              onClick={() => setConfirmState(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <div className="flex flex-col items-center text-center space-y-3 mt-2">
-              {confirmState.color === "rose" ? (
-                <div className="p-3 bg-rose-50 rounded-2xl border border-rose-100 text-rose-600">
-                  <AlertCircle className="w-7 h-7" />
-                </div>
-              ) : confirmState.color === "emerald" ? (
-                <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-600">
-                  <CheckCircle className="w-7 h-7" />
-                </div>
-              ) : (
-                <div className="p-3 bg-blue-50 rounded-2xl border border-blue-100 text-blue-600">
-                  <AlertCircle className="w-7 h-7" />
-                </div>
-              )}
-              
-              <h3 className="font-bold text-slate-900 text-sm">
-                {confirmState.title}
-              </h3>
-              
-              <p className="text-slate-500 text-xs leading-relaxed">
-                {confirmState.message}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Simpan Pinjam BUMDES</h1>
+              <p className="text-slate-400 text-xs font-semibold mt-1">
+                Kelola pendaftaran anggota, tabungan simpanan wajib & pokok nasabah, serta pinjaman kredit masyarakat & POKTAN.
               </p>
             </div>
-            
-            <div className="flex gap-2.5 mt-6">
-              {confirmState.cancelText && (
-                <button
-                  type="button"
-                  onClick={() => setConfirmState(null)}
-                  className="flex-1 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-650 font-bold border border-slate-200 rounded-xl text-[11px] transition-all active:scale-95"
-                >
-                  {confirmState.cancelText}
-                </button>
-              )}
+             <div className="flex items-center gap-2">
               <button
-                type="button"
-                onClick={confirmState.onConfirm}
-                className={`flex-1 py-2.5 text-white font-bold rounded-xl text-[11px] shadow-md transition-all active:scale-95 ${
-                  confirmState.color === "rose"
-                    ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/10"
-                    : confirmState.color === "emerald"
-                    ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10"
-                    : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/10"
-                }`}
+                onClick={() => {
+                  setNewMemberName("")
+                  setNewMemberPayPokok(true)
+                  setFormError(null)
+                  setFormSuccess(null)
+                  setActiveModal("new_member")
+                }}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-2xl text-xs shadow-md shadow-emerald-600/10 transition-all active:scale-95 shrink-0 w-fit"
               >
-                {confirmState.confirmText}
+                <Plus className="w-4 h-4" />
+                Registrasi Anggota
               </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* WhatsApp Message Reminder Dialog */}
-      {waModalData && (
-        <WaNotificationModal
-          isOpen={showWaModal}
-          onClose={() => {
-            setShowWaModal(false)
-            setWaModalData(null)
-          }}
-          {...waModalData}
-        />
-      )}
+          {/* Navigation Tabs */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-1">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl w-fit">
+              <button
+                onClick={() => {
+                  setActiveTab("members")
+                  setSearchQuery("")
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === "members" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                Keanggotaan & Tabungan
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("loans")
+                  setSearchQuery("")
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === "loans" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                Piutang Pinjaman Kredit
+              </button>
+            </div>
+          </div>
 
+          {/* Table Container */}
+          {loading ? (
+            <div className="py-12 flex flex-col items-center justify-center gap-3">
+              <div className="w-10 h-10 border-4 border-emerald-650 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-slate-400 font-semibold text-xs animate-pulse">Memproses data BUMDES...</p>
+            </div>
+          ) : error ? (
+            <div className="p-6 bg-rose-50 border border-rose-100 rounded-3xl text-rose-800">
+              <p className="font-bold text-sm">Terjadi Kesalahan</p>
+              <p className="mt-1 text-xs font-semibold text-rose-600">{error}</p>
+            </div>
+          ) : activeTab === "members" ? (
+            <MemberTab
+              filteredMembers={filteredMembers}
+              setSelectedMember={setSelectedMember}
+              setSavingType={setSavingType}
+              setSavingFlow={setSavingFlow}
+              setSavingAmount={setSavingAmount}
+              setSavingDesc={setSavingDesc}
+              setFormError={setFormError}
+              setFormSuccess={setFormSuccess}
+              setActiveModal={setActiveModal}
+              setLoanType={setLoanType}
+              setLoanPrincipal={setLoanPrincipal}
+              setLoanInterest={setLoanInterest}
+              setLoanTerm={setLoanTerm}
+              setEditMemberName={setEditMemberName}
+              handleToggleMemberActive={handleToggleMemberActive}
+              handleDeleteMember={handleDeleteMember}
+              handlePrintSavings={handlePrintSavings}
+              handlePrintLoans={handlePrintLoans}
+              memberStatusFilter={memberStatusFilter}
+              setMemberStatusFilter={setMemberStatusFilter}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
+          ) : (
+            <LoanTab
+              filteredLoans={filteredLoans}
+              setSelectedLoan={setSelectedLoan}
+              setFormError={setFormError}
+              setFormSuccess={setFormSuccess}
+              setActiveModal={setActiveModal}
+              setWaModalData={setWaModalData}
+              setShowWaModal={setShowWaModal}
+              setReceiptData={setReceiptData}
+              setShowReceipt={setShowReceipt}
+              settings={settings}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
+          )}
+
+          {/* Modals Container */}
+          <MemberModal
+            activeModal={activeModal}
+            selectedMember={selectedMember}
+            setActiveModal={setActiveModal}
+            formError={formError}
+            formSuccess={formSuccess}
+            formSubmitLoading={formSubmitLoading}
+            handleCreateMember={handleCreateMember}
+            handleUpdateMember={handleUpdateMember}
+            newMemberName={newMemberName}
+            setNewMemberName={setNewMemberName}
+            newMemberPayPokok={newMemberPayPokok}
+            setNewMemberPayPokok={setNewMemberPayPokok}
+            editMemberName={editMemberName}
+            setEditMemberName={setEditMemberName}
+          />
+
+          <SavingModal
+            activeModal={activeModal}
+            selectedMember={selectedMember}
+            setActiveModal={setActiveModal}
+            formError={formError}
+            formSuccess={formSuccess}
+            formSubmitLoading={formSubmitLoading}
+            savingType={savingType}
+            setSavingType={setSavingType}
+            savingFlow={savingFlow}
+            setSavingFlow={setSavingFlow}
+            savingAmount={savingAmount}
+            setSavingAmount={setSavingAmount}
+            savingDesc={savingDesc}
+            setSavingDesc={setSavingDesc}
+            handleCreateSaving={handleCreateSaving}
+          />
+
+          <LoanModal
+            activeModal={activeModal}
+            selectedMember={selectedMember}
+            setActiveModal={setActiveModal}
+            formError={formError}
+            formSuccess={formSuccess}
+            formSubmitLoading={formSubmitLoading}
+            loanType={loanType}
+            setLoanType={setLoanType}
+            loanPrincipal={loanPrincipal}
+            setLoanPrincipal={setLoanPrincipal}
+            loanInterest={loanInterest}
+            setLoanInterest={setLoanInterest}
+            loanTerm={loanTerm}
+            setLoanTerm={setLoanTerm}
+            handleCreateLoan={handleCreateLoan}
+          />
+
+          <RepaymentModal
+            activeModal={activeModal}
+            selectedLoan={selectedLoan}
+            setActiveModal={setActiveModal}
+            formError={formError}
+            formSuccess={formSuccess}
+            formSubmitLoading={formSubmitLoading}
+            repayPrincipal={repayPrincipal}
+            setRepayPrincipal={setRepayPrincipal}
+            repayInterest={repayInterest}
+            setRepayInterest={setRepayInterest}
+            handleCreateRepayment={handleCreateRepayment}
+            setReceiptData={setReceiptData}
+            setShowReceipt={setShowReceipt}
+          />
+
+          {/* Kwitansi Modal */}
+          <KwitansiModal
+            isOpen={showReceipt}
+            onClose={() => setShowReceipt(false)}
+            bumdesName={settings?.bumdes_name}
+            locationText={settings?.village_name ? `Desa ${settings.village_name}, Kec. ${settings.district_name}` : ""}
+            {...receiptData}
+          />
+
+          {/* Custom Confirmation / Alert Modal */}
+          {confirmState && confirmState.isOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-sm shadow-2xl p-6 relative">
+                <button
+                  onClick={() => setConfirmState(null)}
+                  className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                
+                <div className="flex flex-col items-center text-center space-y-3 mt-2">
+                  {confirmState.color === "rose" ? (
+                    <div className="p-3 bg-rose-50 rounded-2xl border border-rose-100 text-rose-600">
+                      <AlertCircle className="w-7 h-7" />
+                    </div>
+                  ) : confirmState.color === "emerald" ? (
+                    <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-600">
+                      <CheckCircle className="w-7 h-7" />
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-blue-50 rounded-2xl border border-blue-100 text-blue-600">
+                      <AlertCircle className="w-7 h-7" />
+                    </div>
+                  )}
+                  
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    {confirmState.title}
+                  </h3>
+                  
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    {confirmState.message}
+                  </p>
+                </div>
+                
+                <div className="flex gap-2.5 mt-6">
+                  {confirmState.cancelText && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmState(null)}
+                      className="flex-1 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold border border-slate-200 rounded-xl text-[11px] transition-all active:scale-95"
+                    >
+                      {confirmState.cancelText}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={confirmState.onConfirm}
+                    className={`flex-1 py-2.5 text-white font-bold rounded-xl text-[11px] shadow-md transition-all active:scale-95 ${
+                      confirmState.color === "rose"
+                        ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/10"
+                        : confirmState.color === "emerald"
+                        ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10"
+                        : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/10"
+                    }`}
+                  >
+                    {confirmState.confirmText}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* WhatsApp Message Reminder Dialog */}
+          {waModalData && (
+            <WaNotificationModal
+              isOpen={showWaModal}
+              onClose={() => {
+                setShowWaModal(false)
+                setWaModalData(null)
+              }}
+              {...waModalData}
+            />
+          )}
         </div>
       ) : (
         <div className="print-area bg-white text-slate-800 p-8 min-h-screen font-serif text-[11px] leading-relaxed">
@@ -1534,30 +896,30 @@ export default function SimpanPinjamPage() {
                 </p>
               </div>
 
-              <table className="w-full border-collapse border border-slate-350 text-[11px]">
+              <table className="w-full border-collapse border border-slate-300 text-[11px]">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-700">
-                    <th className="border border-slate-350 px-3 py-2 text-center w-8">No</th>
-                    <th className="border border-slate-350 px-3 py-2 text-left">Kode Anggota</th>
-                    <th className="border border-slate-350 px-3 py-2 text-left">Nama Anggota</th>
-                    <th className="border border-slate-350 px-3 py-2 text-right">Simpanan Pokok</th>
-                    <th className="border border-slate-350 px-3 py-2 text-right">Simpanan Wajib</th>
-                    <th className="border border-slate-350 px-3 py-2 text-right font-bold">Total Tabungan</th>
-                    <th className="border border-slate-350 px-3 py-2 text-center">Keaktifan</th>
+                  <tr className="bg-slate-50 text-slate-700 font-bold">
+                    <th className="border border-slate-300 px-3 py-2 text-center w-8">No</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">Kode Anggota</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">Nama Anggota</th>
+                    <th className="border border-slate-300 px-3 py-2 text-right">Simpanan Pokok</th>
+                    <th className="border border-slate-300 px-3 py-2 text-right">Simpanan Wajib</th>
+                    <th className="border border-slate-300 px-3 py-2 text-right font-bold">Total Tabungan</th>
+                    <th className="border border-slate-300 px-3 py-2 text-center">Keaktifan</th>
                   </tr>
                 </thead>
                 <tbody>
                   {members.map((member, index) => (
                     <tr key={member.id} className="hover:bg-slate-50/50">
-                      <td className="border border-slate-355 px-3 py-2 text-center">{index + 1}</td>
-                      <td className="border border-slate-355 px-3 py-2 font-bold">{member.code}</td>
-                      <td className="border border-slate-355 px-3 py-2 font-medium">{member.name}</td>
-                      <td className="border border-slate-355 px-3 py-2 text-right">{formatRupiah(member.simpananPokok)}</td>
-                      <td className="border border-slate-355 px-3 py-2 text-right">{formatRupiah(member.simpananWajib)}</td>
-                      <td className="border border-slate-355 px-3 py-2 text-right font-bold text-emerald-800">
+                      <td className="border border-slate-300 px-3 py-2 text-center">{index + 1}</td>
+                      <td className="border border-slate-300 px-3 py-2 font-bold">{member.code}</td>
+                      <td className="border border-slate-300 px-3 py-2 font-medium">{member.name}</td>
+                      <td className="border border-slate-300 px-3 py-2 text-right">{formatRupiah(member.simpananPokok)}</td>
+                      <td className="border border-slate-300 px-3 py-2 text-right">{formatRupiah(member.simpananWajib)}</td>
+                      <td className="border border-slate-300 px-3 py-2 text-right font-bold text-emerald-800">
                         {formatRupiah(member.simpananPokok + member.simpananWajib)}
                       </td>
-                      <td className="border border-slate-355 px-3 py-2 text-center">
+                      <td className="border border-slate-300 px-3 py-2 text-center">
                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${member.isActive !== false ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
                           {member.isActive !== false ? "Aktif" : "Nonaktif"}
                         </span>
@@ -1565,17 +927,17 @@ export default function SimpanPinjamPage() {
                     </tr>
                   ))}
                   <tr className="bg-slate-50 font-bold">
-                    <td colSpan={3} className="border border-slate-350 px-3 py-2 text-right uppercase">Total Seluruh Simpanan:</td>
-                    <td className="border border-slate-350 px-3 py-2 text-right">
+                    <td colSpan={3} className="border border-slate-300 px-3 py-2 text-right uppercase">Total Seluruh Simpanan:</td>
+                    <td className="border border-slate-300 px-3 py-2 text-right">
                       {formatRupiah(members.reduce((sum, m) => sum + m.simpananPokok, 0))}
                     </td>
-                    <td className="border border-slate-350 px-3 py-2 text-right">
+                    <td className="border border-slate-300 px-3 py-2 text-right">
                       {formatRupiah(members.reduce((sum, m) => sum + m.simpananWajib, 0))}
                     </td>
-                    <td className="border border-slate-350 px-3 py-2 text-right text-emerald-800">
+                    <td className="border border-slate-300 px-3 py-2 text-right text-emerald-800">
                       {formatRupiah(members.reduce((sum, m) => sum + m.simpananPokok + m.simpananWajib, 0))}
                     </td>
-                    <td className="border border-slate-350 px-3 py-2"></td>
+                    <td className="border border-slate-300 px-3 py-2"></td>
                   </tr>
                 </tbody>
               </table>
@@ -1589,17 +951,17 @@ export default function SimpanPinjamPage() {
                 </p>
               </div>
 
-              <table className="w-full border-collapse border border-slate-350 text-[11px]">
+              <table className="w-full border-collapse border border-slate-300 text-[11px]">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-700">
-                    <th className="border border-slate-350 px-3 py-2 text-center w-8">No</th>
-                    <th className="border border-slate-350 px-3 py-2 text-left">Nasabah</th>
-                    <th className="border border-slate-350 px-3 py-2 text-center">Tipe Kredit</th>
-                    <th className="border border-slate-350 px-3 py-2 text-right">Pokok Awal</th>
-                    <th className="border border-slate-350 px-3 py-2 text-center">Jasa / Tenor</th>
-                    <th className="border border-slate-350 px-3 py-2 text-right">Angsuran / Bln</th>
-                    <th className="border border-slate-350 px-3 py-2 text-right font-bold">Sisa Piutang Pokok</th>
-                    <th className="border border-slate-350 px-3 py-2 text-center">Status</th>
+                  <tr className="bg-slate-50 text-slate-700 font-bold">
+                    <th className="border border-slate-300 px-3 py-2 text-center w-8">No</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">Nasabah</th>
+                    <th className="border border-slate-300 px-3 py-2 text-center">Tipe Kredit</th>
+                    <th className="border border-slate-300 px-3 py-2 text-right">Pokok Awal</th>
+                    <th className="border border-slate-300 px-3 py-2 text-center">Jasa / Tenor</th>
+                    <th className="border border-slate-300 px-3 py-2 text-right">Angsuran / Bln</th>
+                    <th className="border border-slate-300 px-3 py-2 text-right font-bold">Sisa Piutang Pokok</th>
+                    <th className="border border-slate-300 px-3 py-2 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1607,25 +969,25 @@ export default function SimpanPinjamPage() {
                     const remaining = calculateRemainingPrincipal(loan)
                     return (
                       <tr key={loan.id} className="hover:bg-slate-50/50">
-                        <td className="border border-slate-355 px-3 py-2 text-center">{index + 1}</td>
-                        <td className="border border-slate-355 px-3 py-2 font-medium">
+                        <td className="border border-slate-300 px-3 py-2 text-center">{index + 1}</td>
+                        <td className="border border-slate-300 px-3 py-2 font-medium">
                           <div>{loan.member.name}</div>
                           <div className="text-[9px] text-slate-400 font-bold">{loan.member.code}</div>
                         </td>
-                        <td className="border border-slate-355 px-3 py-2 text-center font-bold">
+                        <td className="border border-slate-300 px-3 py-2 text-center font-bold">
                           <span className={`px-2 py-0.5 rounded text-[9px] ${loan.type === "POKTAN" ? "bg-amber-50 text-amber-800" : "bg-purple-50 text-purple-800"}`}>
                             {loan.type}
                           </span>
                         </td>
-                        <td className="border border-slate-355 px-3 py-2 text-right">{formatRupiah(loan.principal)}</td>
-                        <td className="border border-slate-355 px-3 py-2 text-center font-medium">
+                        <td className="border border-slate-300 px-3 py-2 text-right">{formatRupiah(loan.principal)}</td>
+                        <td className="border border-slate-300 px-3 py-2 text-center font-medium">
                           {loan.interestRate}% / {loan.termMonths} bln
                         </td>
-                        <td className="border border-slate-355 px-3 py-2 text-right">{formatRupiah(loan.monthlyInstallment)}</td>
-                        <td className="border border-slate-355 px-3 py-2 text-right font-bold text-slate-900">
+                        <td className="border border-slate-300 px-3 py-2 text-right">{formatRupiah(loan.monthlyInstallment)}</td>
+                        <td className="border border-slate-300 px-3 py-2 text-right font-bold text-slate-900">
                           {formatRupiah(remaining)}
                         </td>
-                        <td className="border border-slate-355 px-3 py-2 text-center">
+                        <td className="border border-slate-300 px-3 py-2 text-center">
                           <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${loan.status === "LUNAS" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"}`}>
                             {loan.status}
                           </span>
@@ -1634,16 +996,16 @@ export default function SimpanPinjamPage() {
                     )
                   })}
                   <tr className="bg-slate-50 font-bold">
-                    <td colSpan={3} className="border border-slate-350 px-3 py-2 text-right uppercase">Total Seluruh Piutang:</td>
-                    <td className="border border-slate-350 px-3 py-2 text-right">
+                    <td colSpan={3} className="border border-slate-300 px-3 py-2 text-right uppercase">Total Seluruh Piutang:</td>
+                    <td className="border border-slate-300 px-3 py-2 text-right">
                       {formatRupiah(loans.reduce((sum, l) => sum + l.principal, 0))}
                     </td>
-                    <td className="border border-slate-350 px-3 py-2"></td>
-                    <td className="border border-slate-350 px-3 py-2"></td>
-                    <td className="border border-slate-350 px-3 py-2 text-right text-slate-900">
+                    <td className="border border-slate-300 px-3 py-2"></td>
+                    <td className="border border-slate-300 px-3 py-2"></td>
+                    <td className="border border-slate-300 px-3 py-2 text-right text-slate-900 font-bold">
                       {formatRupiah(loans.reduce((sum, l) => sum + calculateRemainingPrincipal(l), 0))}
                     </td>
-                    <td className="border border-slate-350 px-3 py-2"></td>
+                    <td className="border border-slate-300 px-3 py-2"></td>
                   </tr>
                 </tbody>
               </table>

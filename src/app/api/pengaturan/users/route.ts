@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import * as crypto from "crypto"
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex")
-}
+import { hashPassword } from "@/lib/auth"
 
 // GET: List all users (exclude passwordHash)
 export async function GET() {
@@ -65,7 +61,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const passwordHash = hashPassword(password)
+    const passwordHash = await hashPassword(password)
 
     const user = await db.user.create({
       data: { username, passwordHash, name, role },

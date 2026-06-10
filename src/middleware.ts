@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { verifyToken, AUTH_COOKIE_NAME } from "@/lib/jwt"
 
 // Define role-based access rules for both page paths and API paths
 const routeRules: { path: string; roles: string[] }[] = [
@@ -28,7 +29,7 @@ const routeRules: { path: string; roles: string[] }[] = [
   { path: "/api/pengaturan", roles: ["ADMIN"] }
 ]
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 1. Let public and authentication-specific paths pass through
@@ -44,27 +45,40 @@ export function middleware(request: NextRequest) {
   ) {
     // If user is already logged in, redirect away from /login to dashboard root
     if (pathname === "/login") {
-      const userCookie = request.cookies.get("bumdes_user")
-      if (userCookie) {
-        try {
-          JSON.parse(userCookie.value)
+      const token = request.cookies.get(AUTH_COOKIE_NAME)
+      if (token) {
+        const payload = await verifyToken(token.value)
+        if (payload) {
           return NextResponse.redirect(new URL("/dashboard", request.url))
-        } catch (_) {
-          // Cookie is corrupted, clear it and let them stay on login page
-          const response = NextResponse.next()
-          response.cookies.delete("bumdes_user")
-          return response
         }
+        // Token is invalid/expired, clear it and let them stay on login page
+        const response = NextResponse.next()
+        response.cookies.delete(AUTH_COOKIE_NAME)
+        response.cookies.delete("bumdes_user")
+        return response
       }
     }
     return NextResponse.next()
   }
 
-  // 2. Retrieve user session cookie
-  const userCookie = request.cookies.get("bumdes_user")
+  // 2. Retrieve JWT token from cookie
+  const token = request.cookies.get(AUTH_COOKIE_NAME)
 
-  // 3. If no session exists:
-  if (!userCookie) {
+  // 3. If no token exists, try legacy cookie for backward compatibility
+  if (!token) {
+    // Check legacy bumdes_user cookie as fallback
+    const legacyCookie = request.cookies.get("bumdes_user")
+    if (legacyCookie) {
+      try {
+        const user = JSON.parse(legacyCookie.value)
+        // Legacy session still valid — check role-based access
+        return checkRoleAccess(pathname, user.role, request)
+      } catch {
+        // Corrupted legacy cookie
+      }
+    }
+
+    // No valid session at all
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         { success: false, error: "Sesi Anda telah berakhir. Silakan masuk kembali." },
@@ -74,29 +88,32 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // 4. Parse the session data
-  let user: { id: string; username: string; role: string }
-  try {
-    user = JSON.parse(userCookie.value)
-  } catch (error) {
-    // Invalid cookie structure: clear cookie and redirect/error
+  // 4. Verify JWT token
+  const payload = await verifyToken(token.value)
+  if (!payload) {
+    // Token expired or invalid
     const response = pathname.startsWith("/api/")
-      ? NextResponse.json({ success: false, error: "Sesi tidak valid." }, { status: 401 })
+      ? NextResponse.json({ success: false, error: "Sesi tidak valid atau telah berakhir." }, { status: 401 })
       : NextResponse.redirect(new URL("/login", request.url))
-      
+    
+    response.cookies.delete(AUTH_COOKIE_NAME)
     response.cookies.delete("bumdes_user")
     return response
   }
 
   // 5. Check role-based route permissions
-  // Sorting rules by length descending to match the most specific path first (e.g. /api/simpan-pinjam before /api)
+  return checkRoleAccess(pathname, payload.role, request)
+}
+
+function checkRoleAccess(pathname: string, role: string, request: NextRequest) {
+  // Sorting rules by length descending to match the most specific path first
   const matchedRule = routeRules
     .sort((a, b) => b.path.length - a.path.length)
     .find(
       (rule) => pathname === rule.path || pathname.startsWith(rule.path + "/")
     )
 
-  if (matchedRule && !matchedRule.roles.includes(user.role)) {
+  if (matchedRule && !matchedRule.roles.includes(role)) {
     // User does not have authorization for this path
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
