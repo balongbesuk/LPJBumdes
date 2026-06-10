@@ -24,6 +24,7 @@ import {
   X
 } from "lucide-react"
 import { formatRupiah } from "@/lib/utils"
+import { useSettings } from "@/context/SettingsContext"
 
 interface ReportData {
   labaRugi: {
@@ -67,6 +68,7 @@ interface PeriodLock {
 }
 
 export default function KeuanganPage() {
+  const settings = useSettings()
   const [activeTab, setActiveTab] = useState<"labarugi" | "neraca" | "aruskasmodal" | "bku" | "pajak" | "aset" | "shu" | "tutupbuku">("labarugi")
   const [report, setReport] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -461,8 +463,10 @@ export default function KeuanganPage() {
 
       {/* Document print header */}
       <div className="hidden print-title text-center space-y-1">
-        <h1 className="text-xl font-bold uppercase text-slate-900">BUMDES "BAROKAH" BALONGBESUK</h1>
-        <p className="text-sm font-semibold text-slate-500">Desa Balongbesuk, Kecamatan Diwek, Kabupaten Jombang</p>
+        <h1 className="text-xl font-bold uppercase text-slate-900">{settings?.bumdes_name || "BUMDES"}</h1>
+        <p className="text-sm font-semibold text-slate-500">
+          {settings?.village_name ? `Desa ${settings.village_name}, Kecamatan ${settings.district_name}, Kabupaten ${settings.regency_name}` : ""}
+        </p>
         <div className="border-b-2 border-slate-900 my-4" />
         <h2 className="text-sm font-bold uppercase text-slate-800 mt-2">
           {activeTab === "labarugi" && "Laporan Perhitungan Sisa Hasil Usaha (Laba / Rugi)"}

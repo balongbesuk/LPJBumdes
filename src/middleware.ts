@@ -37,7 +37,9 @@ export function middleware(request: NextRequest) {
     pathname === "/berita" ||
     pathname.startsWith("/berita/") ||
     pathname === "/login" ||
+    pathname === "/setup" ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/setup") ||
     pathname.includes(".") // static assets or public files
   ) {
     // If user is already logged in, redirect away from /login to dashboard root

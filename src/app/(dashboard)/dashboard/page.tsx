@@ -28,6 +28,7 @@ import {
   CircleDollarSign,
 } from "lucide-react"
 import { formatRupiah } from "@/lib/utils"
+import { useSettings } from "@/context/SettingsContext"
 import {
   ResponsiveContainer,
   BarChart,
@@ -111,6 +112,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 }
 
 export default function DashboardPage() {
+  const settings = useSettings()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -551,7 +553,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h3 className="font-bold text-sm tracking-tight">Sistem BUMDES</h3>
-                <p className="text-[10px] text-slate-400 font-semibold">Barokah Balongbesuk</p>
+                <p className="text-[10px] text-slate-400 font-semibold">{settings?.bumdes_name || "BUMDES"}</p>
               </div>
             </div>
 
@@ -579,7 +581,7 @@ export default function DashboardPage() {
 
             <div className="mt-4 pt-4 border-t border-white/10">
               <p className="text-[10px] text-slate-500 font-semibold text-center">
-                BUMDES Barokah © {new Date().getFullYear()} — SIM Terintegrasi
+                {settings?.bumdes_name || "BUMDES"} © {new Date().getFullYear()} — SIM Terintegrasi
               </p>
             </div>
           </div>

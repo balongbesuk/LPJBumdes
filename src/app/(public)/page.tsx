@@ -1,7 +1,7 @@
 import React from "react"
 import Link from "next/link"
 import { db } from "@/lib/db"
-import { slugify } from "@/lib/utils"
+import { getSettings } from "@/lib/settings"
 import {
   Coins,
   Building2,
@@ -19,18 +19,34 @@ import type { Metadata } from "next"
 
 export const revalidate = 0 // Disable cache for live stats
 
-export const metadata: Metadata = {
-  title: "BUMDES Barokah Balongbesuk - Menggerakkan Ekonomi Desa",
-  description: "Portal resmi Badan Usaha Milik Desa (BUMDES) Barokah Balongbesuk, Diwek, Jombang. Informasi unit usaha simpan pinjam, sewa gedung serbaguna, sewa lahan/lapak, PPOB dan berita kegiatan desa.",
-  keywords: ["BUMDES", "Balongbesuk", "Jombang", "Diwek", "Simpan Pinjam Desa", "Sewa Gedung Jombang", "Lapak UMKM", "Laporan Pertanggungjawaban Desa"],
-  openGraph: {
-    title: "BUMDES Barokah Balongbesuk - Menggerakkan Ekonomi Desa",
-    description: "Portal resmi Badan Usaha Milik Desa (BUMDES) Barokah Balongbesuk, Diwek, Jombang.",
-    type: "website",
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings()
+  const name = settings.bumdes_name || "BUMDES Desa"
+  const village = settings.village_name || ""
+  const district = settings.district_name || ""
+  const regency = settings.regency_name || ""
+  const locationParts = [village, district, regency].filter(Boolean).join(", ")
+  return {
+    title: `${name} - Menggerakkan Ekonomi Desa`,
+    description: `Portal resmi ${name}${locationParts ? `, ${locationParts}` : ""}. Informasi unit usaha simpan pinjam, sewa gedung, sewa lahan, PPOB dan berita kegiatan desa.`,
+    keywords: ["BUMDES", village, regency, "Simpan Pinjam Desa", "Sewa Gedung", "Lapak UMKM", "Laporan Pertanggungjawaban Desa"].filter(Boolean),
+    openGraph: {
+      title: `${name} - Menggerakkan Ekonomi Desa`,
+      description: `Portal resmi ${name}${locationParts ? `, ${locationParts}` : ""}.`,
+      type: "website",
+    }
   }
 }
 
 export default async function PublicHomePage() {
+  const settings = await getSettings()
+  const bumdesName = settings.bumdes_name || "BUMDES Desa"
+  const villageName = settings.village_name || ""
+  const districtName = settings.district_name || ""
+  const regencyName = settings.regency_name || ""
+  const locationParts = [villageName, districtName, regencyName].filter(Boolean)
+  const locationShort = locationParts.length > 0 ? locationParts.join(", ") : ""
+
   // Fetch live stats from the database
   const memberCount = await db.member.count()
   const postCount = await db.post.count({ where: { published: true } })
@@ -45,7 +61,7 @@ export default async function PublicHomePage() {
 
   const stats = [
     { label: "Anggota Aktif", value: memberCount, icon: Users, suffix: "Orang" },
-    { label: "Transaksi Sewa", value: bookingCount + 120, icon: TrendingUp, suffix: "Sewa" }, // added base dummy offset
+    { label: "Transaksi Sewa", value: bookingCount, icon: TrendingUp, suffix: "Sewa" },
     { label: "Artikel Rilis", value: postCount, icon: Award, suffix: "Publikasi" },
   ]
 
@@ -61,7 +77,7 @@ export default async function PublicHomePage() {
     },
     {
       name: "Unit Sewa Gedung",
-      description: "Penyewaan Gedung Serbaguna Desa untuk sarana olahraga (badminton), resepsi pernikahan, rapat, dan acara kemasyarakatan.",
+      description: "Penyewaan Gedung Serbaguna Desa untuk sarana olahraga, resepsi pernikahan, rapat, dan acara kemasyarakatan.",
       icon: Building2,
       color: "from-blue-500 to-indigo-600",
       textColor: "text-blue-700",
@@ -97,7 +113,7 @@ export default async function PublicHomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
-                Official Portal BUMDES Barokah
+                Official Portal {bumdesName}
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-none text-white">
                 Menggerakkan Ekonomi, <br />
@@ -106,7 +122,7 @@ export default async function PublicHomePage() {
                 </span>
               </h1>
               <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                Badan Usaha Milik Desa Balongbesuk mengelola berbagai unit usaha strategis secara terintegrasi untuk mendukung pertumbuhan ekonomi lokal dan kesejahteraan masyarakat.
+                {bumdesName} mengelola berbagai unit usaha strategis secara terintegrasi untuk mendukung pertumbuhan ekonomi lokal dan kesejahteraan masyarakat.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
                 <Link
@@ -134,8 +150,10 @@ export default async function PublicHomePage() {
                     <Building2 className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div>
-                    <p className="font-bold text-white text-xs sm:text-sm">BUMDES Balongbesuk</p>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Kabupaten Jombang, Jawa Timur</p>
+                    <p className="font-bold text-white text-xs sm:text-sm">{bumdesName}</p>
+                    {locationShort && (
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{locationShort}</p>
+                    )}
                   </div>
                 </div>
                 <div className="border-t border-white/5 pt-4 space-y-3">
@@ -190,7 +208,7 @@ export default async function PublicHomePage() {
             Layanan Kami
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-            Unit Usaha BUMDES Barokah
+            Unit Usaha {bumdesName}
           </h2>
           <p className="text-slate-400 text-xs sm:text-sm font-semibold leading-relaxed">
             Menghadirkan pelayanan dan fasilitas kemasyarakatan guna mempercepat perputaran roda ekonomi lokal desa.

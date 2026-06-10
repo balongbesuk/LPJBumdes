@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-06-10
+
+### Added
+- **Multi-Desa & Setup Wizard**:
+  - Added interactive `/setup` configuration wizard for first-time installation (village profile, custom SHU allocation, and initial balance entry).
+  - Implemented automatic opening ledger journal entry creation from setup wizard initial balance inputs.
+  - Added whitelist configurations for `/setup` and `/api/setup` in `middleware.ts`.
+  - Added global client-side `SettingsProvider` and `useSettings` hook, and server-side `getSettings` helper.
+
+### Changed
+- **Generic Seeding & Dynamic UI**:
+  - Cleaned up database default seed data (`prisma/seed.ts`) to be completely generic.
+  - Refactored hardcoded village/BUMDES details across landing page, layouts, login, dashboard stats, Simpan Pinjam, Sewa Lahan, Sewa Gedung, PPOB, Keuangan, receipts, PDF print layouts, and WhatsApp reminder templates to be dynamic based on database settings.
+  - Removed hardcoded 2025 historical financial statistics and offsets from dashboard metrics and PPOB listings.
+
 ## [1.1.0] - 2026-06-10
 
 ### Added

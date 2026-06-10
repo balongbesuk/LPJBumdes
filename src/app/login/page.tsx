@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [bumdesName, setBumdesName] = useState("Sistem Informasi BUMDES")
+  const [locationText, setLocationText] = useState("")
 
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
@@ -17,6 +19,17 @@ export default function LoginPage() {
     if (storedUser) {
       router.push("/dashboard")
     }
+    // Fetch settings for dynamic branding
+    fetch("/api/setup")
+      .then((r) => r.json())
+      .then((result) => {
+        if (result.success && result.data) {
+          if (result.data.bumdes_name) setBumdesName(result.data.bumdes_name)
+          const parts = [result.data.village_name, result.data.district_name, result.data.regency_name].filter(Boolean)
+          if (parts.length > 0) setLocationText(parts.join(", "))
+        }
+      })
+      .catch(() => {})
   }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,8 +73,8 @@ export default function LoginPage() {
           <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30 mb-4">
             <Building2 className="w-7 h-7" />
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">BUMDES "BAROKAH"</h1>
-          <p className="text-slate-400 text-xs font-semibold mt-1">Balongbesuk, Diwek, Jombang</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">{bumdesName}</h1>
+          {locationText && <p className="text-slate-400 text-xs font-semibold mt-1">{locationText}</p>}
         </div>
 
         {/* Error notification */}
@@ -127,7 +140,7 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-8 text-center text-[10px] text-slate-400 font-semibold">
-          Sistem Informasi Manajemen BUMDES &bull; T.A 2026
+          Sistem Informasi Manajemen BUMDES &bull; T.A {new Date().getFullYear()}
         </div>
       </div>
     </div>

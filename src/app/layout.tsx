@@ -8,8 +8,8 @@ const fontSans = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "BUMDES Barokah Balongbesuk - Sistem Informasi Manajemen",
-  description: "Aplikasi internal manajemen BUMDES Barokah Balongbesuk dan otomasi Laporan Pertanggungjawaban (LPJ)",
+  title: "Sistem Informasi Manajemen BUMDES",
+  description: "Aplikasi manajemen Badan Usaha Milik Desa (BUMDES) dan otomasi Laporan Pertanggungjawaban (LPJ)",
 }
 
 export default function RootLayout({

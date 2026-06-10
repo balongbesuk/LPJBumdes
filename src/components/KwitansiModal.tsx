@@ -12,6 +12,8 @@ interface KwitansiModalProps {
   amount: number
   details: { label: string; value: string | number }[]
   accounts?: { code: string; name: string; type: "DEBIT" | "CREDIT" }[]
+  bumdesName?: string
+  locationText?: string
 }
 
 export default function KwitansiModal({
@@ -23,7 +25,9 @@ export default function KwitansiModal({
   date,
   amount,
   details,
-  accounts
+  accounts,
+  bumdesName = "BUMDES",
+  locationText = ""
 }: KwitansiModalProps) {
   if (!isOpen) return null
 
@@ -57,9 +61,8 @@ export default function KwitansiModal({
           <div className="print-receipt-content w-[76mm] bg-white border border-slate-200 p-5 shadow-sm font-mono text-[11px] text-slate-800 space-y-4">
             {/* Header POS */}
             <div className="text-center space-y-1">
-              <h2 className="text-xs font-bold uppercase tracking-tight text-slate-900">BUMDES "BAROKAH"</h2>
-              <p className="text-[9px] text-slate-500 uppercase leading-none font-bold">BALONGBESUK DIWEK JOMBANG</p>
-              <p className="text-[8px] text-slate-400 font-semibold leading-tight">Telepon: - | Kantor Desa Balongbesuk</p>
+              <h2 className="text-xs font-bold uppercase tracking-tight text-slate-900">{bumdesName}</h2>
+              {locationText && <p className="text-[9px] text-slate-500 uppercase leading-none font-bold">{locationText}</p>}
               <div className="border-b border-dashed border-slate-300 my-2 pt-1" />
             </div>
 
@@ -120,7 +123,7 @@ export default function KwitansiModal({
               <div className="border-b border-dashed border-slate-300 my-2" />
               <p className="font-bold text-[9px] text-slate-800 uppercase">TERIMA KASIH</p>
               <p className="text-[8px] text-slate-400 font-semibold">Simpan bukti pembayaran ini sebagai tanda bukti sah.</p>
-              <p className="text-[7.5px] text-slate-300 font-semibold leading-none mt-1">Sistem Informasi BUMDES Barokah</p>
+              <p className="text-[7.5px] text-slate-300 font-semibold leading-none mt-1">Sistem Informasi {bumdesName}</p>
             </div>
           </div>
         </div>

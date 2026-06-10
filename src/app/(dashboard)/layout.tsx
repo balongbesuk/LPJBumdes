@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { SettingsProvider } from "@/context/SettingsContext"
 import {
   LayoutDashboard,
   Coins,
@@ -101,6 +102,12 @@ export default function DashboardLayout({
   const [user, setUser] = useState<User | null>(null)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [settings, setSettings] = useState<{
+    bumdes_name: string
+    village_name: string
+    district_name: string
+    regency_name: string
+  } | null>(null)
 
   useEffect(() => {
     // Client-side authentication check
@@ -113,6 +120,20 @@ export default function DashboardLayout({
     const parsedUser = JSON.parse(storedUser)
     setUser(parsedUser)
     setLoading(false)
+
+    // Fetch setup/settings
+    async function fetchSettings() {
+      try {
+        const res = await fetch("/api/setup")
+        const json = await res.json()
+        if (json.success && json.data) {
+          setSettings(json.data)
+        }
+      } catch (err) {
+        console.error("Gagal memuat pengaturan layout", err)
+      }
+    }
+    fetchSettings()
 
     // Enforce role authorization check on pathname transitions
     if (pathname !== "/dashboard") {
@@ -189,8 +210,10 @@ export default function DashboardLayout({
             <Building2 className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-slate-900 tracking-tight text-sm leading-none">BUMDES BAROKAH</h1>
-            <p className="text-xs text-slate-400 font-medium mt-1">Balongbesuk Jombang</p>
+            <h1 className="font-bold text-slate-900 tracking-tight text-sm leading-none uppercase">{settings?.bumdes_name || "BUMDES"}</h1>
+            <p className="text-xs text-slate-400 font-medium mt-1 uppercase">
+              {settings?.village_name ? `DESA ${settings.village_name}` : ""}
+            </p>
           </div>
         </div>
 
@@ -247,7 +270,7 @@ export default function DashboardLayout({
                 <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
                   <Building2 className="w-4 h-4" />
                 </div>
-                <span className="font-bold text-slate-900 text-sm">BUMDES BAROKAH</span>
+                <span className="font-bold text-slate-900 text-sm uppercase">{settings?.bumdes_name || "BUMDES"}</span>
               </div>
               <button onClick={() => setIsMobileOpen(false)} className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
@@ -328,7 +351,9 @@ export default function DashboardLayout({
 
         {/* Dynamic Page Children */}
         <main className="flex-1 p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
-          {children}
+          <SettingsProvider>
+            {children}
+          </SettingsProvider>
         </main>
       </div>
     </div>

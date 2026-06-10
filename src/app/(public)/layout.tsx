@@ -1,12 +1,22 @@
 import React from "react"
 import Link from "next/link"
 import { Building2, Newspaper, Home, LogIn } from "lucide-react"
+import { getSettings } from "@/lib/settings"
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const settings = await getSettings()
+  const bumdesName = settings.bumdes_name || "BUMDES Desa"
+  const villageName = settings.village_name || ""
+  const districtName = settings.district_name || ""
+  const regencyName = settings.regency_name || ""
+  const locationParts = [villageName, districtName, regencyName].filter(Boolean)
+  const locationShort = locationParts.slice(0, 2).join(", ") || "Indonesia"
+  const locationFull = locationParts.join(", ") || ""
+
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
       {/* Navigation Header */}
@@ -18,11 +28,13 @@ export default function PublicLayout({
             </div>
             <div>
               <span className="font-bold text-slate-900 tracking-tight text-sm sm:text-base leading-none block">
-                BUMDES BAROKAH
+                {bumdesName}
               </span>
-              <span className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 block">
-                Balongbesuk Jombang
-              </span>
+              {locationShort && (
+                <span className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 block">
+                  {locationShort}
+                </span>
+              )}
             </div>
           </Link>
 
@@ -67,10 +79,10 @@ export default function PublicLayout({
                 <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center">
                   <Building2 className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-bold tracking-tight text-base">BUMDES BAROKAH</span>
+                <span className="font-bold tracking-tight text-base">{bumdesName}</span>
               </div>
               <p className="text-xs sm:text-sm leading-relaxed text-slate-400 font-medium">
-                Badan Usaha Milik Desa (BUMDES) Barokah Balongbesuk berkomitmen meningkatkan perekonomian masyarakat desa melalui tata kelola usaha yang transparan, modern, dan mandiri.
+                Badan Usaha Milik Desa (BUMDES) berkomitmen meningkatkan perekonomian masyarakat desa melalui tata kelola usaha yang transparan, modern, dan mandiri.
               </p>
             </div>
 
@@ -92,20 +104,21 @@ export default function PublicLayout({
 
             {/* Address Column */}
             <div className="space-y-4">
-              <h4 className="font-bold text-white text-sm uppercase tracking-wider">Kontak & Alamat</h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-slate-400 font-medium">
-                Jl. Kyai Haji Wahab Hasbullah No. 12, Desa Balongbesuk, Kecamatan Diwek, Kabupaten Jombang, Jawa Timur, 61471.
+              <h4 className="font-bold text-white text-sm uppercase tracking-wider">Informasi</h4>
+              {locationFull && (
+                <p className="text-xs sm:text-sm leading-relaxed text-slate-400 font-medium">
+                  {locationFull}
+                </p>
+              )}
+              <p className="text-[11px] text-slate-500 font-semibold leading-relaxed">
+                Data kontak dan alamat lengkap dapat dikonfigurasi melalui menu Pengaturan di Sistem Manajemen.
               </p>
-              <div className="text-xs pt-1">
-                <p>Email: <span className="text-white">bumdes.balongbesuk@gmail.com</span></p>
-                <p className="mt-1">Telepon/WA: <span className="text-white">+62 812-3456-7890</span></p>
-              </div>
             </div>
           </div>
 
           <div className="border-t border-slate-800 mt-12 pt-8 text-center text-xs text-slate-500 font-semibold flex flex-col sm:flex-row sm:justify-between gap-4">
-            <p>BUMDES Barokah Balongbesuk &copy; {new Date().getFullYear()}. Hak Cipta Dilindungi.</p>
-            <p>Desa Balongbesuk, Diwek, Jombang, Jawa Timur</p>
+            <p>{bumdesName} &copy; {new Date().getFullYear()}. Hak Cipta Dilindungi.</p>
+            {locationFull && <p>{locationFull}</p>}
           </div>
         </div>
       </footer>

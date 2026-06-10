@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { db } from "@/lib/db"
 import { Calendar, ChevronLeft, Building2, Clock, FileText } from "lucide-react"
 import { slugify } from "@/lib/utils"
+import { getSettings } from "@/lib/settings"
 
 import type { Metadata } from "next"
 
@@ -14,16 +15,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     where: { slug: params.slug },
   })
 
+  const settings = await getSettings()
+  const bumdesName = settings.bumdes_name || "BUMDES"
+
   if (!post) {
     return {
-      title: "Berita Tidak Ditemukan - BUMDES Barokah",
+      title: `Berita Tidak Ditemukan - ${bumdesName}`,
     }
   }
 
   const snippet = post.content.length > 150 ? `${post.content.substring(0, 150)}...` : post.content
 
   return {
-    title: `${post.title} - BUMDES Barokah Balongbesuk`,
+    title: `${post.title} - ${bumdesName}`,
     description: snippet,
     openGraph: {
       title: post.title,

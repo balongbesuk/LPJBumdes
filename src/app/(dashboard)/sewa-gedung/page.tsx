@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { formatRupiah } from "@/lib/utils"
 import KwitansiModal from "@/components/KwitansiModal"
+import { useSettings } from "@/context/SettingsContext"
 
 interface Booking {
   id: string
@@ -35,6 +36,7 @@ interface Booking {
 }
 
 export default function SewaGedungPage() {
+  const settings = useSettings()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [currentDate, setCurrentDate] = useState(new Date())
   const [loading, setLoading] = useState(true)
@@ -1041,6 +1043,8 @@ export default function SewaGedungPage() {
       <KwitansiModal
         isOpen={showReceipt}
         onClose={() => setShowReceipt(false)}
+        bumdesName={settings?.bumdes_name}
+        locationText={settings?.village_name ? `Desa ${settings.village_name}, Kec. ${settings.district_name}` : ""}
         {...receiptData}
       />
 
@@ -1049,9 +1053,10 @@ export default function SewaGedungPage() {
         <div className="print-area bg-white text-slate-800 p-8 min-h-screen font-serif text-[11px] leading-relaxed">
           {/* Kop Surat / Letterhead */}
           <div className="text-center space-y-1 border-b-2 border-slate-800 pb-4 mb-6">
-            <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">BUMDES "BAROKAH" BALONGBESUK</h1>
-            <p className="text-xs font-semibold text-slate-500">Desa Balongbesuk, Kecamatan Diwek, Kabupaten Jombang</p>
-            <p className="text-[10px] text-slate-400 font-medium">Jawa Timur, Indonesia - Kode Pos 61471</p>
+            <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">{settings?.bumdes_name || "BUMDES"}</h1>
+            <p className="text-xs font-semibold text-slate-500">
+              {settings?.village_name ? `Desa ${settings.village_name}, Kecamatan ${settings.district_name}, Kabupaten ${settings.regency_name}` : ""}
+            </p>
           </div>
 
           {printType === "laporan_gedung" ? (
@@ -1219,12 +1224,12 @@ export default function SewaGedungPage() {
           {/* Tanda Tangan Section */}
           <div className="mt-12 grid grid-cols-2 text-center text-[11px] font-medium leading-relaxed">
             <div>
-              <p className="mb-16">Mengetahui,<br /><b>Ketua BUMDES "Barokah"</b></p>
-              <p className="underline font-bold">Desa Balongbesuk</p>
+              <p className="mb-16">Mengetahui,<br /><b>Ketua {settings?.bumdes_name || "BUMDES"}</b></p>
+              <p className="underline font-bold">{settings?.village_name ? `Desa ${settings.village_name}` : ""}</p>
             </div>
             <div>
-              <p className="mb-16">Balongbesuk, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}<br /><b>Operator Unit Sewa</b></p>
-              <p className="underline font-bold">BUMDES Barokah</p>
+              <p className="mb-16">{settings?.village_name || "Desa"}, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}<br /><b>Operator Unit Sewa</b></p>
+              <p className="underline font-bold">{settings?.bumdes_name || "BUMDES"}</p>
             </div>
           </div>
         </div>

@@ -44,12 +44,12 @@ export async function GET() {
     const currentLapakRev = await getRevenueFromJournal("4-1300")
     const currentPpobRev = await getRevenueFromJournal("4-1400")
 
-    // Consolidated revenue (2025 Historical + 2026 Current)
+    // Consolidated revenue
     const revenueData = [
-      { name: "Simpan Pinjam", value: 4390000 + currentSpRev, color: "#10b981" }, // Emerald 500
-      { name: "Sewa Lapak/Warung", value: 23500000 + currentLapakRev, color: "#3b82f6" }, // Blue 500
-      { name: "Sewa Gedung (GSG)", value: 29950000 + currentGedungRev, color: "#f59e0b" }, // Amber 500
-      { name: "PPOB / Agen Pos", value: 2089850 + currentPpobRev, color: "#a855f7" } // Purple 500
+      { name: "Simpan Pinjam", value: currentSpRev, color: "#10b981" }, // Emerald 500
+      { name: "Sewa Lapak/Warung", value: currentLapakRev, color: "#3b82f6" }, // Blue 500
+      { name: "Sewa Gedung (GSG)", value: currentGedungRev, color: "#f59e0b" }, // Amber 500
+      { name: "PPOB / Agen Pos", value: currentPpobRev, color: "#a855f7" } // Purple 500
     ]
 
     const totalRevenue = revenueData.reduce((sum, item) => sum + item.value, 0)

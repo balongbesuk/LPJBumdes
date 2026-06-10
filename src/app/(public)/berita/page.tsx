@@ -1,18 +1,28 @@
 import React from "react"
 import { db } from "@/lib/db"
 import BeritaList from "./BeritaList"
-
+import { getSettings } from "@/lib/settings"
 import type { Metadata } from "next"
 
 export const revalidate = 0 // Disable cache for live news updates
 
-export const metadata: Metadata = {
-  title: "Berita & Kegiatan BUMDES Barokah Balongbesuk",
-  description: "Rilis pers resmi, transparansi laporan kegiatan, dan kabar terbaru seputar Badan Usaha Milik Desa (BUMDES) Barokah Balongbesuk, Jombang.",
-  keywords: ["Berita BUMDES", "Kegiatan Desa Balongbesuk", "Kabar Jombang", "Transparansi BUMDES"],
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings()
+  const bumdesName = settings.bumdes_name || "BUMDES"
+  const villageName = settings.village_name || ""
+  
+  return {
+    title: `Berita & Kegiatan ${bumdesName}`,
+    description: `Rilis pers resmi, transparansi laporan kegiatan, dan kabar terbaru seputar Badan Usaha Milik Desa (BUMDES) ${bumdesName}${villageName ? `, Desa ${villageName}` : ""}.`,
+    keywords: ["Berita BUMDES", `Kegiatan Desa ${villageName}`, `Kabar ${bumdesName}`, "Transparansi BUMDES"],
+  }
 }
 
 export default async function PublicBeritaPage() {
+  const settings = await getSettings()
+  const bumdesName = settings.bumdes_name || "BUMDES"
+  const villageName = settings.village_name || ""
+
   // Fetch all published articles
   const posts = await db.post.findMany({
     where: { published: true },
@@ -35,7 +45,7 @@ export default async function PublicBeritaPage() {
           Berita & Kegiatan BUMDES
         </h1>
         <p className="text-slate-400 text-xs sm:text-sm font-semibold max-w-2xl leading-relaxed">
-          Temukan rilis pers resmi, agenda desa, dan dokumentasi foto dari seluruh unit usaha operasional BUMDES Barokah Balongbesuk.
+          Temukan rilis pers resmi, agenda desa, dan dokumentasi foto dari seluruh unit usaha operasional {bumdesName}{villageName ? ` Desa ${villageName}` : ""}.
         </p>
       </div>
 

@@ -13,6 +13,7 @@ import {
   Printer
 } from "lucide-react"
 import { formatRupiah } from "@/lib/utils"
+import { useSettings } from "@/context/SettingsContext"
 
 interface PpobRecord {
   id: string
@@ -23,6 +24,7 @@ interface PpobRecord {
 }
 
 export default function PpobPage() {
+  const settings = useSettings()
   const [rekaps, setRekaps] = useState<PpobRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -112,8 +114,8 @@ export default function PpobPage() {
     }
   }
 
-  // Pre-filled 2025 total commission to show context
-  const totalCommissionAllTime = rekaps.reduce((sum, r) => sum + r.totalCommission, 0) + 2089850 // Add historical 2025
+  // Pre-filled total commission from database
+  const totalCommissionAllTime = rekaps.reduce((sum, r) => sum + r.totalCommission, 0)
 
   return (
     <div className="space-y-6">
@@ -211,7 +213,7 @@ export default function PpobPage() {
             </div>
           </div>
           <span className="text-[10px] text-slate-400 font-semibold mt-2 block">
-            Sudah termasuk komisi tahun 2025 (Rp 2.089.850)
+            Akumulasi pendapatan komisi yang dibukukan
           </span>
         </div>
       </div>
@@ -353,9 +355,10 @@ export default function PpobPage() {
         <div className="print-area bg-white text-slate-800 p-8 min-h-screen font-serif text-[11px] leading-relaxed">
           {/* Kop Surat / Letterhead */}
           <div className="text-center space-y-1 border-b-2 border-slate-800 pb-4 mb-6">
-            <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">BUMDES "BAROKAH" BALONGBESUK</h1>
-            <p className="text-xs font-semibold text-slate-500">Desa Balongbesuk, Kecamatan Diwek, Kabupaten Jombang</p>
-            <p className="text-[10px] text-slate-400 font-medium">Jawa Timur, Indonesia - Kode Pos 61471</p>
+            <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">{settings?.bumdes_name || "BUMDES"}</h1>
+            <p className="text-xs font-semibold text-slate-500">
+              {settings?.village_name ? `Desa ${settings.village_name}, Kecamatan ${settings.district_name}, Kabupaten ${settings.regency_name}` : ""}
+            </p>
           </div>
 
           <div className="space-y-6">
@@ -391,16 +394,8 @@ export default function PpobPage() {
                     </tr>
                   )
                 })}
-                {/* Include 2025 historical data */}
-                <tr className="bg-slate-50/50 font-medium">
-                  <td className="border border-slate-355 px-3 py-2 text-center">-</td>
-                  <td className="border border-slate-355 px-3 py-2 text-slate-400">Desember 2025</td>
-                  <td className="border border-slate-355 px-3 py-2 text-slate-500 font-bold italic">Rekap Saldo Awal Komisi 2025</td>
-                  <td className="border border-slate-355 px-3 py-2 text-right text-slate-400">Rp 0,00</td>
-                  <td className="border border-slate-355 px-3 py-2 text-right text-purple-700 font-bold">Rp 2.089.850,00</td>
-                </tr>
                 <tr className="bg-slate-50 font-bold">
-                  <td colSpan={3} className="border border-slate-350 px-3 py-2 text-right uppercase">Total Laba Komisi PPOB All-Time:</td>
+                  <td colSpan={3} className="border border-slate-350 px-3 py-2 text-right uppercase">Total Laba Komisi PPOB:</td>
                   <td className="border border-slate-350 px-3 py-2 text-right">
                     {formatRupiah(rekaps.reduce((sum, r) => sum + r.totalRevenue, 0))}
                   </td>
@@ -415,12 +410,12 @@ export default function PpobPage() {
           {/* Tanda Tangan Section */}
           <div className="mt-12 grid grid-cols-2 text-center text-[11px] font-medium leading-relaxed">
             <div>
-              <p className="mb-16">Mengetahui,<br /><b>Ketua BUMDES "Barokah"</b></p>
-              <p className="underline font-bold">Desa Balongbesuk</p>
+              <p className="mb-16">Mengetahui,<br /><b>Ketua {settings?.bumdes_name || "BUMDES"}</b></p>
+              <p className="underline font-bold">{settings?.village_name ? `Desa ${settings.village_name}` : ""}</p>
             </div>
             <div>
-              <p className="mb-16">Balongbesuk, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}<br /><b>Operator Unit PPOB</b></p>
-              <p className="underline font-bold">BUMDES Barokah</p>
+              <p className="mb-16">{settings?.village_name || "Desa"}, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}<br /><b>Operator Unit PPOB</b></p>
+              <p className="underline font-bold">{settings?.bumdes_name || "BUMDES"}</p>
             </div>
           </div>
         </div>

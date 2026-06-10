@@ -27,6 +27,7 @@ import {
 import { formatRupiah } from "@/lib/utils"
 import KwitansiModal from "@/components/KwitansiModal"
 import WaNotificationModal from "@/components/WaNotificationModal"
+import { useSettings } from "@/context/SettingsContext"
 
 interface Member {
   id: string
@@ -57,6 +58,7 @@ interface Loan {
 }
 
 export default function SimpanPinjamPage() {
+  const settings = useSettings()
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<"members" | "loans" | "transactions">("members")
   const [memberStatusFilter, setMemberStatusFilter] = useState<"active" | "inactive">("active")
@@ -932,7 +934,7 @@ export default function SimpanPinjamPage() {
                                     setWaModalData({
                                       recipientName: loan.member.name,
                                       defaultPhone: "",
-                                      defaultMessage: `Halo *${loan.member.name}*,\n\nIni adalah pengingat resmi dari pengelola unit Simpan Pinjam BUMDES "Barokah" Balongbesuk.\n\nHarap diingat bahwa angsuran bulanan untuk pinjaman *${loan.type}* Anda senilai *${formatRupiah(loan.monthlyInstallment)}* telah jatuh tempo / wajib segera dibayarkan.\n\nSisa pinjaman Anda saat ini adalah *${formatRupiah(remaining)}*.\n\nMohon lakukan pembayaran di kantor BUMDES Balongbesuk. Terima kasih.`
+                                      defaultMessage: `Halo *${loan.member.name}*,\n\nIni adalah pengingat resmi dari pengelola unit Simpan Pinjam BUMDES "${settings?.bumdes_name || 'BUMDES'}".\n\nHarap diingat bahwa angsuran bulanan untuk pinjaman *${loan.type}* Anda senilai *${formatRupiah(loan.monthlyInstallment)}* telah jatuh tempo / wajib segera dibayarkan.\n\nSisa pinjaman Anda saat ini adalah *${formatRupiah(remaining)}*.\n\nMohon lakukan pembayaran di kantor BUMDES. Terima kasih.`
                                     })
                                     setShowWaModal(true)
                                   }}
@@ -1432,6 +1434,8 @@ export default function SimpanPinjamPage() {
       <KwitansiModal
         isOpen={showReceipt}
         onClose={() => setShowReceipt(false)}
+        bumdesName={settings?.bumdes_name}
+        locationText={settings?.village_name ? `Desa ${settings.village_name}, Kec. ${settings.district_name}` : ""}
         {...receiptData}
       />
 
@@ -1515,9 +1519,10 @@ export default function SimpanPinjamPage() {
         <div className="print-area bg-white text-slate-800 p-8 min-h-screen font-serif text-[11px] leading-relaxed">
           {/* Kop Surat / Letterhead */}
           <div className="text-center space-y-1 border-b-2 border-slate-800 pb-4 mb-6">
-            <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">BUMDES "BAROKAH" BALONGBESUK</h1>
-            <p className="text-xs font-semibold text-slate-500">Desa Balongbesuk, Kecamatan Diwek, Kabupaten Jombang</p>
-            <p className="text-[10px] text-slate-400 font-medium">Jawa Timur, Indonesia - Kode Pos 61471</p>
+            <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">{settings?.bumdes_name || "BUMDES"}</h1>
+            <p className="text-xs font-semibold text-slate-500">
+              {settings?.village_name ? `Desa ${settings.village_name}, Kecamatan ${settings.district_name}, Kabupaten ${settings.regency_name}` : ""}
+            </p>
           </div>
 
           {printType === "savings" ? (
@@ -1648,12 +1653,12 @@ export default function SimpanPinjamPage() {
           {/* Tanda Tangan Section */}
           <div className="mt-12 grid grid-cols-2 text-center text-[11px] font-medium leading-relaxed">
             <div>
-              <p className="mb-16">Mengetahui,<br /><b>Ketua BUMDES "Barokah"</b></p>
-              <p className="underline font-bold">Desa Balongbesuk</p>
+              <p className="mb-16">Mengetahui,<br /><b>Ketua {settings?.bumdes_name || "BUMDES"}</b></p>
+              <p className="underline font-bold">{settings?.village_name ? `Desa ${settings.village_name}` : ""}</p>
             </div>
             <div>
-              <p className="mb-16">Balongbesuk, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}<br /><b>Bendahara BUMDES</b></p>
-              <p className="underline font-bold">BUMDES Barokah</p>
+              <p className="mb-16">{settings?.village_name || "Desa"}, {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}<br /><b>Bendahara BUMDES</b></p>
+              <p className="underline font-bold">{settings?.bumdes_name || "BUMDES"}</p>
             </div>
           </div>
         </div>
