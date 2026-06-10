@@ -1,0 +1,213 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  name         String
+  role         String   // ADMIN (Kepala BUMDES), BENDAHARA, SEKRETARIS, OPERATOR_SEWA, OPERATOR_SP
+  createdAt    DateTime @default(now())
+}
+
+model Member {
+  id                 String              @id @default(uuid())
+  code               String              @unique // P-001, P-002, dll.
+  name               String
+  isActive           Boolean             @default(true)
+  simpananPokok      Float               @default(0)
+  simpananWajib      Float               @default(0)
+  savingTransactions SavingTransaction[]
+  loans              Loan[]
+  createdAt          DateTime            @default(now())
+}
+
+model SavingTransaction {
+  id          String   @id @default(uuid())
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id])
+  type        String   // POKOK, WAJIB, SUKARELA
+  amount      Float
+  flow        String   // MASUK (Setoran), KELUAR (Penarikan)
+  date        DateTime @default(now())
+  description String?
+}
+
+model Loan {
+  id                 String          @id @default(uuid())
+  memberId           String
+  member             Member          @relation(fields: [memberId], references: [id])
+  type               String          // MASYARAKAT, POKTAN
+  principal          Float
+  interestRate       Float           // Persentase bunga flat bulanan
+  monthlyInstallment Float
+  termMonths         Int
+  status             String          // ACTIVE, PAID, LATE
+  createdAt          DateTime        @default(now())
+  repayments         LoanRepayment[]
+}
+
+model LoanRepayment {
+  id            String   @id @default(uuid())
+  loanId        String
+  loan          Loan     @relation(fields: [loanId], references: [id])
+  principalPaid Float
+  interestPaid  Float
+  date          DateTime @default(now())
+  description   String?
+}
+
+model GedungBooking {
+  id           String   @id @default(uuid())
+  customerName String
+  type         String   // BADMINTON, RAPAT, PESTA
+  dateStart    DateTime
+  dateEnd      DateTime
+  totalFee     Float
+  dpAmount     Float
+  status       String   // BOOKED, PAID, CANCELLED
+  createdAt    DateTime @default(now())
+}
+
+model LahanContract {
+  id          String         @id @default(uuid())
+  type        String         // WARUNG, LAPAK
+  number      String         // Nomor kavling
+  tenantName  String
+  phone       String?
+  shift       String         // NONE, PAGI, MALAM
+  fee         Float          // Biaya sewa (Bulanan untuk lapak, Tahunan untuk warung)
+  periodStart DateTime
+  periodEnd   DateTime
+  status      String         // ACTIVE, EXPIRED, TERMINATED
+  payments    LahanPayment[]
+  createdAt   DateTime       @default(now())
+}
+
+model LahanPayment {
+  id            String        @id @default(uuid())
+  contractId    String
+  contract      LahanContract @relation(fields: [contractId], references: [id])
+  amount        Float
+  date          DateTime      @default(now())
+  periodCovered String        // Keterangan bulan/tahun yang dibayar
+}
+
+model PpobRekap {
+  id              String   @id @default(uuid())
+  date            DateTime @default(now())
+  totalRevenue    Float    // Total omset
+  totalCommission Float    // Total laba bersih/komisi BUMDES
+  description     String?
+}
+
+model LedgerAccount {
+  code String @id // Kode Akun: 1-1100, 2-1100, dll.
+  name String
+  type String // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+}
+
+model JournalEntry {
+  id          String        @id @default(uuid())
+  date        DateTime      @default(now())
+  description String
+  unitUsaha   String        // SP, GEDUNG, LAHAN, PPOB, UMUM
+  lines       JournalLine[]
+}
+
+model JournalLine {
+  id             String       @id @default(uuid())
+  journalEntryId String
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  accountCode    String
+  type           String       // DEBIT, CREDIT
+  amount         Float
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  imageUrl  String?
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  docNumber   String   @unique // Nomor Surat
+  type        String   // SURAT_MASUK, SURAT_KELUAR, SK, KEPUTUSAN
+  subject     String   // Perihal
+  sender      String?  // Pengirim (untuk surat masuk)
+  recipient   String?  // Penerima (untuk surat keluar)
+  date        DateTime @default(now())
+  fileUrl     String?  // Path file softcopy
+  createdAt   DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  username  String
+  name      String
+  role      String
+  action    String
+  detail    String
+  timestamp DateTime @default(now())
+}
+
+model PeriodLock {
+  id        String   @id @default(uuid())
+  year      Int
+  month     Int      // 1 to 12
+  locked    Boolean  @default(true)
+  lockedBy  String
+  createdAt DateTime @default(now())
+
+  @@unique([year, month])
+}
+
+model FixedAsset {
+  id               String   @id @default(uuid())
+  code             String   @unique // AST-001, AST-002, dll.
+  name             String
+  purchaseDate     DateTime
+  purchaseCost     Float
+  economicLife     Int      // Umur ekonomis dalam tahun (misal: 5 tahun)
+  depreciationRate Float    // Persentase penyusutan tahunan (desimal, e.g. 20% = 20)
+  accumDep         Float    @default(0) // Akumulasi penyusutan saat ini
+  createdAt        DateTime @default(now())
+}
+
+model TaxTransaction {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  description String
+  taxType     String   // PPh 21, PPh 23, PPh 25, PPN
+  amount      Float
+  flow        String   // POTONG (diterima/dipotong), SETOR (dibayarkan)
+  createdAt   DateTime @default(now())
+}
+
+model MeetingMinutes {
+  id        String   @id @default(uuid())
+  date      DateTime @default(now())
+  title     String
+  category  String   // MUSDES, INTERN, PENGAWAS, LAINNYA
+  attendees Int
+  minutes   String   // Ringkasan jalannya rapat
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
