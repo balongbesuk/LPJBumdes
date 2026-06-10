@@ -3,15 +3,15 @@ import { db } from "@/lib/db"
 import { slugify } from "@/lib/utils"
 
 interface Params {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // PUT: Update an article
 export async function PUT(request: Request, { params }: Params) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { title, content, imageUrl, published } = body
 
@@ -39,7 +39,7 @@ export async function PUT(request: Request, { params }: Params) {
 // DELETE: Delete an article
 export async function DELETE(request: Request, { params }: Params) {
   try {
-    const { id } = params
+    const { id } = await params
     await db.post.delete({
       where: { id }
     })

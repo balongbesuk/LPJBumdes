@@ -3,8 +3,8 @@ import { db } from "@/lib/db"
 import { cookies } from "next/headers"
 import { logActivity } from "@/lib/audit"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -35,7 +35,7 @@ export async function GET() {
 // POST: Toggle period lock
 export async function POST(request: Request) {
   try {
-    const session = getUserSession()
+    const session = await getUserSession()
     if (!session || (session.role !== "ADMIN" && session.role !== "BENDAHARA")) {
       return NextResponse.json(
         { success: false, error: "Hanya Admin dan Bendahara yang memiliki wewenang Tutup Buku" },

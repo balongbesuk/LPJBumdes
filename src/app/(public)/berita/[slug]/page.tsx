@@ -11,8 +11,9 @@ import type { Metadata } from "next"
 export const revalidate = 0 // Disable cache for live news updates
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params
   const post = await db.post.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
   })
 
   const settings = await getSettings()
@@ -39,13 +40,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 export default async function BeritaDetailPage({ params }: PageProps) {
-  const { slug } = params
+  const { slug } = await params
 
   // Fetch current article
   const post = await db.post.findUnique({

@@ -4,8 +4,8 @@ import { logActivity } from "@/lib/audit"
 import { cookies } from "next/headers"
 import { AUTH_COOKIE_NAME } from "@/lib/jwt"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -56,7 +56,7 @@ export async function POST() {
     }
 
     // 3. Log activity
-    const session = getUserSession()
+    const session = await getUserSession()
     if (session) {
       await logActivity("RESET_DATABASE", "Melakukan reset database ke pengaturan awal pabrik", session)
     }

@@ -2,13 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.3.1] - 2026-06-10
+## [1.4.0] - 2026-06-10
+
+### Changed
+- **Next.js 15 & React 19 Upgrade**:
+  - Upgraded Next.js from `14.2.35` to `15.5.18` and migrated React to `19.0.0` (resolves 14 Next.js Dependabot alerts).
+  - Refactored all Route Handlers and Server Components to await `cookies()` as it is now asynchronous.
+  - Refactored dynamic routes (`berita/[slug]`, `users/[id]`, and `artikel/[id]`) to await `params` as they are now Promises.
 
 ### Fixed
-- **Security Hardening (Code Scanning & Dependabot fixes)**:
-  - Removed the hardcoded fallback JWT secret in `src/lib/jwt.ts` and replaced it with a dynamically generated fallback key using standard global `crypto.getRandomValues()` to resolve hardcoded cryptographic credential scanner warnings.
-  - Hardened cookie configurations for the legacy `bumdes_user` session cookie by adding `secure: process.env.NODE_ENV === "production"`, `sameSite: "lax"`, and explicit `httpOnly` flags to set and delete operations in authentication and reset API routes.
-  - Resolved the PostCSS vulnerability (XSS via Unescaped `</style>` tag) by upgrading `postcss` in devDependencies to `^8.5.10` and setting a package-wide override in `package.json` to force all Next.js sub-dependencies to use a secure PostCSS version.
+- **CodeQL Security Hardening**:
+  - Resolved **CodeQL High Severity Alert**: Removed the legacy SHA-256 password hashing fallback to keep only modern `bcrypt` password verification, eliminating weak cryptographical algorithm warnings.
+  - Resolved **CodeQL High Severity Alert**: Rewrote the combined alternation ReDoS regular expression in `slugify` inside `src/lib/utils.ts` into two separate, safe replacements (avoids polynomial regex backtracking risk).
+  - Resolved **CodeQL Moderate Alert**: Sanitized and hardened cookie configurations by setting `secure: process.env.NODE_ENV === "production"`, `sameSite: "lax"`, and `httpOnly` flags for the legacy session cookie.
+  - Resolved **PostCSS Vulnerability**: Forced PostCSS to version `^8.5.10` or higher across all dependencies using npm `overrides`.
 
 ## [1.3.0] - 2026-06-10
 

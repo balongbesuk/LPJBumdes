@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { comparePassword, hashPassword, isLegacyHash } from "@/lib/auth"
+import { comparePassword } from "@/lib/auth"
 import { signToken, AUTH_COOKIE_NAME, getAuthCookieOptions } from "@/lib/jwt"
 
 export async function POST(request: Request) {
@@ -33,15 +33,6 @@ export async function POST(request: Request) {
         { success: false, error: "Password salah" },
         { status: 401 }
       )
-    }
-
-    // Auto-migrate legacy SHA-256 hash to bcrypt on successful login
-    if (isLegacyHash(user.passwordHash)) {
-      const bcryptHash = await hashPassword(password)
-      await db.user.update({
-        where: { id: user.id },
-        data: { passwordHash: bcryptHash },
-      })
     }
 
     // Generate JWT token

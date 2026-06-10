@@ -4,8 +4,8 @@ import fs from "fs"
 import path from "path"
 import { logActivity } from "@/lib/audit"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -17,7 +17,7 @@ function getUserSession() {
 
 export async function GET() {
   try {
-    const session = getUserSession()
+    const session = await getUserSession()
     if (!session || session.role !== "ADMIN") {
       return new Response("Unauthorized", { status: 401 })
     }

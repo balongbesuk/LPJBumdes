@@ -5,8 +5,8 @@ import { isPeriodLocked } from "@/lib/period-lock"
 import { logActivity } from "@/lib/audit"
 import { cookies } from "next/headers"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const result = await postJournalEntry(txDate, description, unitUsaha, lines)
 
     // Log to audit log
-    const session = getUserSession()
+    const session = await getUserSession()
     if (session) {
       const actDetail = `Mencatat transaksi jurnal: ${description} (Unit: ${unitUsaha}) senilai Rp ${lines.find(l => l.type === 'DEBIT')?.amount.toLocaleString("id-ID")}`
       await logActivity("POST_JOURNAL_ENTRY", actDetail, session)

@@ -5,8 +5,8 @@ import { logActivity } from "@/lib/audit"
 import { cookies } from "next/headers"
 import { formatRupiah } from "@/lib/utils"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     })
 
     // Write audit activity log
-    const session = getUserSession()
+    const session = await getUserSession()
     if (session) {
       const actDetail = `Menerima pembayaran iuran sewa lahan (${contract.type} Kavling ${contract.number}) dari ${contract.tenantName} sebesar ${formatRupiah(amount)} untuk ${periodCovered}`
       await logActivity("COLLECT_LAHAN_RENT", actDetail, session)

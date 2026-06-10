@@ -3,8 +3,8 @@ import { db } from "@/lib/db"
 import { logActivity } from "@/lib/audit"
 import { cookies } from "next/headers"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     })
 
     // Log to audit log
-    const session = getUserSession()
+    const session = await getUserSession()
     if (session) {
       const actDetail = `Mencatat notulen rapat: ${title} (Kategori: ${category}, Peserta: ${attendeesVal} orang)`
       await logActivity("CREATE_MEETING_MINUTES", actDetail, session)
@@ -100,7 +100,7 @@ export async function DELETE(request: Request) {
     })
 
     // Log to audit log
-    const session = getUserSession()
+    const session = await getUserSession()
     if (session) {
       const actDetail = `Menghapus notulen rapat: ${meeting.title}`
       await logActivity("DELETE_MEETING_MINUTES", actDetail, session)

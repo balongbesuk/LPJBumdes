@@ -4,8 +4,8 @@ import { isPeriodLocked } from "@/lib/period-lock"
 import { logActivity } from "@/lib/audit"
 import { cookies } from "next/headers"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     })
 
     // Log activity
-    const session = getUserSession()
+    const session = await getUserSession()
     if (session) {
       const actDetail = `Membeli aset tetap ${nextCode} - ${name} senilai Rp ${costVal.toLocaleString("id-ID")}`
       await logActivity("ADD_FIXED_ASSET", actDetail, session)
@@ -229,7 +229,7 @@ export async function PUT(request: Request) {
     })
 
     // Log activity
-    const session = getUserSession()
+    const session = await getUserSession()
     if (session) {
       const actDetail = `Menjalankan penyusutan aset tetap tahun ${year} senilai Rp ${result.totalDeprecAmount.toLocaleString("id-ID")} untuk ${result.count} barang`
       await logActivity("DEPRECIATE_ASSETS", actDetail, session)

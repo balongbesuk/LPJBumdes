@@ -6,7 +6,7 @@ import DashboardClient from "./DashboardClient"
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
 
   let userName = "Admin"

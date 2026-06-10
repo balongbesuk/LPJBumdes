@@ -4,8 +4,8 @@ import { postJournalEntry } from "@/lib/ledger"
 import { logActivity } from "@/lib/audit"
 import { cookies } from "next/headers"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -202,7 +202,7 @@ export async function PUT(request: Request) {
 
     // Log activity if isActive status is changed
     if (isActive !== undefined) {
-      const session = getUserSession()
+      const session = await getUserSession()
       if (session) {
         const actType = isActive ? "ACTIVATE_MEMBER" : "DEACTIVATE_MEMBER"
         const actDetail = `${isActive ? "Mengaktifkan kembali" : "Menonaktifkan"} anggota ${updatedMember.name} (${updatedMember.code})`

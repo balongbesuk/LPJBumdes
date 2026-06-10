@@ -5,10 +5,10 @@ import { hashPassword } from "@/lib/auth"
 // PUT: Update user (name, role, optionally password)
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { name, role, password } = body
 
@@ -73,10 +73,10 @@ export async function PUT(
 // DELETE: Remove a user
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     const existing = await db.user.findUnique({ where: { id } })
     if (!existing) {

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { cookies } from "next/headers"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -15,7 +15,7 @@ function getUserSession() {
 
 export async function GET() {
   try {
-    const session = getUserSession()
+    const session = await getUserSession()
     if (!session || session.role !== "ADMIN") {
       return NextResponse.json(
         { success: false, error: "Hanya Admin (Kepala BUMDES) yang dapat mengakses log audit" },

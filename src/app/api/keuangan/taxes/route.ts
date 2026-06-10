@@ -4,8 +4,8 @@ import { isPeriodLocked } from "@/lib/period-lock"
 import { logActivity } from "@/lib/audit"
 import { cookies } from "next/headers"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     })
 
     // Log to audit trail
-    const session = getUserSession()
+    const session = await getUserSession()
     if (session) {
       const actDetail = `Mencatat transaksi pajak ${taxType} (${flow === "POTONG" ? "Dipotong" : "Disetor"}) senilai Rp ${amount.toLocaleString("id-ID")}`
       await logActivity("TAX_TRANSACTION", actDetail, session)

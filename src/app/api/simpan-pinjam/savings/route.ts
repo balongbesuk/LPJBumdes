@@ -5,8 +5,8 @@ import { logActivity } from "@/lib/audit"
 import { cookies } from "next/headers"
 import { formatRupiah } from "@/lib/utils"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -174,7 +174,7 @@ export async function POST(request: Request) {
     })
 
     // Write audit activity log
-    const session = getUserSession()
+    const session = await getUserSession()
     if (session) {
       const actType = flow === "MASUK" ? "DEPOSIT_SAVINGS" : "WITHDRAW_SAVINGS"
       const actDetail = `${flow === "MASUK" ? "Setoran" : "Penarikan"} Simpanan ${type} untuk ${member.name} (${member.code}) sebesar ${formatRupiah(amount)}`

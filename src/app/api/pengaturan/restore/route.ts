@@ -5,8 +5,8 @@ import { logActivity } from "@/lib/audit"
 import fs from "fs"
 import path from "path"
 
-function getUserSession() {
-  const cookieStore = cookies()
+async function getUserSession() {
+  const cookieStore = await cookies()
   const userCookie = cookieStore.get("bumdes_user")
   if (!userCookie) return null
   try {
@@ -18,7 +18,7 @@ function getUserSession() {
 
 export async function POST(request: Request) {
   try {
-    const session = getUserSession()
+    const session = await getUserSession()
     if (!session || session.role !== "ADMIN") {
       return NextResponse.json(
         { success: false, error: "Hanya Admin yang memiliki hak akses untuk memulihkan database" },
