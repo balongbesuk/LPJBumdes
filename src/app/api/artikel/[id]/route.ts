@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { slugify } from "@/lib/utils"
 
 interface Params {
   params: {
@@ -18,6 +19,7 @@ export async function PUT(request: Request, { params }: Params) {
       where: { id },
       data: {
         title,
+        slug: title ? slugify(title) : undefined,
         content,
         imageUrl,
         published

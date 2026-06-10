@@ -31,7 +31,7 @@ interface User {
 const allNavItems = [
   {
     name: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
     roles: ["ADMIN", "BENDAHARA", "SEKRETARIS", "OPERATOR_SP", "OPERATOR_SEWA"]
   },
@@ -115,15 +115,15 @@ export default function DashboardLayout({
     setLoading(false)
 
     // Enforce role authorization check on pathname transitions
-    if (pathname !== "/") {
+    if (pathname !== "/dashboard") {
       const sortedItems = [...allNavItems].sort((a, b) => b.href.length - a.href.length)
       const matchedItem = sortedItems.find(
-        (item) => item.href !== "/" && (pathname === item.href || pathname.startsWith(item.href + "/"))
+        (item) => item.href !== "/dashboard" && (pathname === item.href || pathname.startsWith(item.href + "/"))
       )
       
       if (matchedItem && !matchedItem.roles.includes(parsedUser.role)) {
         // Redirect unauthorized roles back to the main dashboard
-        router.push("/")
+        router.push("/dashboard")
       }
     }
   }, [router, pathname])

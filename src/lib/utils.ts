@@ -13,3 +13,11 @@ export function formatRupiah(amount: number): string {
     maximumFractionDigits: 0
   }).format(amount)
 }
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}

@@ -33,6 +33,9 @@ export function middleware(request: NextRequest) {
 
   // 1. Let public and authentication-specific paths pass through
   if (
+    pathname === "/" ||
+    pathname === "/berita" ||
+    pathname.startsWith("/berita/") ||
     pathname === "/login" ||
     pathname.startsWith("/api/auth") ||
     pathname.includes(".") // static assets or public files
@@ -43,7 +46,7 @@ export function middleware(request: NextRequest) {
       if (userCookie) {
         try {
           JSON.parse(userCookie.value)
-          return NextResponse.redirect(new URL("/", request.url))
+          return NextResponse.redirect(new URL("/dashboard", request.url))
         } catch (_) {
           // Cookie is corrupted, clear it and let them stay on login page
           const response = NextResponse.next()
@@ -100,7 +103,7 @@ export function middleware(request: NextRequest) {
       )
     }
     // Redirect web page navigation to dashboard home
-    return NextResponse.redirect(new URL("/", request.url))
+    return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
   return NextResponse.next()

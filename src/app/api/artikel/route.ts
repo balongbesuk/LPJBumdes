@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { slugify } from "@/lib/utils"
 
 // GET: Fetch all articles
 export async function GET() {
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
     const post = await db.post.create({
       data: {
         title,
+        slug: slugify(title),
         content,
         imageUrl: imageUrl || null,
         published: published || false

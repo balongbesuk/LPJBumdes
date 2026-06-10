@@ -628,9 +628,16 @@ async function main() {
   ]
 
   for (const p of posts) {
+    const slug = p.title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+
     await prisma.post.create({
       data: {
         title: p.title,
+        slug,
         content: p.content,
         published: p.published,
         createdAt: new Date(p.createdAt)

@@ -15,7 +15,7 @@ export default function LoginPage() {
     // If user is already logged in, redirect to dashboard
     const storedUser = localStorage.getItem("bumdes_user")
     if (storedUser) {
-      router.push("/")
+      router.push("/dashboard")
     }
   }, [router])
 
@@ -39,7 +39,7 @@ export default function LoginPage() {
 
       // Save user to localStorage
       localStorage.setItem("bumdes_user", JSON.stringify(result.data))
-      router.push("/")
+      router.push("/dashboard")
       router.refresh()
     } catch (err: any) {
       setError(err.message || "Koneksi ke server gagal")
