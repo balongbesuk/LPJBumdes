@@ -1,50 +1,45 @@
 # Kebijakan Keamanan (Security Policy)
 
-Kami berkomitmen untuk menjaga keamanan data BUMDES dan seluruh modul di dalam aplikasi ini. Halaman ini menjelaskan versi perangkat lunak yang didukung, cara melaporkan kerentanan keamanan, serta panduan pengamanan tambahan saat deploy aplikasi.
+Halaman ini menjelaskan kebijakan keamanan untuk proyek **Sistem Informasi Manajemen BUMDES Balongbesuk** serta tata cara pelaporan jika ditemukan kerentanan keamanan.
 
 ## Versi yang Didukung (Supported Versions)
 
-Pembaruan keamanan dan perbaikan bug aktif saat ini hanya dirilis untuk versi mayor terbaru:
+Pembaruan keamanan dan perbaikan bug hanya dirilis untuk versi mayor terbaru pada cabang `main`:
 
 | Versi | Didukung secara Aktif |
-| ------- | --------------------- |
-| 1.3.x   | :white_check_mark: Ya |
-| < 1.3.0 | :x: Tidak             |
+| ----- | --------------------- |
+| 1.x   | :white_check_mark: Ya |
 
 ---
 
-## Melaporkan Kerentanan (Reporting a Vulnerability)
+## Melaporkan Celah Keamanan (Reporting a Vulnerability)
 
-Jika Anda menemukan kerentanan keamanan atau kelemahan sistem dalam aplikasi ini, harap **jangan memublikasikannya secara terbuka** melalui GitHub Issues atau forum publik lainnya. 
+Jika Anda menemukan celah keamanan (*vulnerability*), mohon tidak melaporkannya melalui GitHub Issues publik demi mencegah penyalahgunaan sebelum perbaikan dirilis.
 
-Ikuti langkah-langkah berikut untuk melaporkan masalah secara aman:
+Silakan laporkan celah keamanan secara privat melalui salah satu metode berikut:
+1. **GitHub Security Advisories**: Laporkan langsung melalui tab **Security** di repositori GitHub kami ([balongbesuk/LPJBumdes/security](https://github.com/balongbesuk/LPJBumdes/security)) dengan memilih opsi *Report a vulnerability*.
+2. **Kontak Pengelola**: Hubungi kontributor/pemelihara repositori ini secara privat melalui profil pengelola organisasi GitHub **balongbesuk**.
 
-1. Kirim laporan detail melalui surel (email) pengembang atau administrator teknis BUMDES setempat di: **admin@desa.id** atau **keamanan@bumdes.go.id**.
-2. Berikan rincian kerentanan, langkah-langkah reproduksi (PoC), beserta dampak yang mungkin ditimbulkan terhadap data keuangan atau sistem BUMDES.
-3. Tim kami akan merespons laporan Anda dalam waktu **48 jam** dan mendiskusikan langkah penyelesaian serta estimasi perilisannya.
-
-Kami sangat menghargai kontribusi Anda dalam menjaga keamanan data desa melalui metode pengungkapan yang bertanggung jawab (*responsible disclosure*).
+Laporan Anda akan dianalisis secara tertutup, dan perbaikan akan segera dirilis pada rilis versi berikutnya.
 
 ---
 
-## Praktik Keamanan Terbaik Saat Deploy (Best Security Practices)
+## Pengamanan Lingkungan Produksi (Production Security Guidelines)
 
-Saat melakukan instalasi dan penggunaan aplikasi di lingkungan produksi, administrator wajib menerapkan beberapa lapisan proteksi tambahan berikut:
+Aplikasi ini menggunakan Next.js dengan basis data SQLite lokal. Saat mendeploy aplikasi ini untuk penggunaan riil, harap perhatikan poin-poin keamanan berikut:
 
-### 1. Kunci Rahasia JWT (`JWT_SECRET`)
-Pastikan variabel lingkungan `JWT_SECRET` diubah di dalam berkas `.env.local` di server produksi. **Jangan gunakan kunci bawaan (*default fallback*)**:
+### 1. Rahasia JWT (`JWT_SECRET`)
+Aplikasi mengamankan sesi pengguna menggunakan token JWT yang disimpan dalam cookie HttpOnly bernama `bumdes_token`. Pastikan Anda menyetel kunci rahasia yang kuat di berkas `.env.local`:
 ```env
-JWT_SECRET=gunakan_string_acak_panjang_dan_rumit_untuk_produksi
+JWT_SECRET=gunakan_kunci_acak_yang_panjang_dan_rumit
 ```
+*Jangan gunakan kunci bawaan (default fallback) di lingkungan produksi.*
 
-### 2. HTTPS/SSL
-Semua komunikasi data finansial BUMDES wajib dienkripsi. Gunakan sertifikat SSL (misalnya dari Let's Encrypt) dan paksa koneksi menggunakan protokol `HTTPS` untuk mengamankan cookie `bumdes_token` yang disetel dengan bendera `httpOnly`.
+### 2. Enkripsi Password (Bcrypt)
+Password pengguna disimpan dalam database setelah disandi (*hashed*) menggunakan pustaka `bcryptjs`. Pengelola sistem wajib mengedukasi pengguna untuk menggunakan password yang kuat dan unik melalui menu pengaturan profil masing-masing.
 
-### 3. Batasi Akses Berkas Database SQLite
-Berkas SQLite `prisma/dev.db` disimpan di sistem lokal server. Pastikan hak akses berkas (file permissions) dibatasi sehingga hanya pengguna sistem yang menjalankan proses Node.js / Next.js saja yang dapat membaca dan menulis berkas tersebut:
-```bash
-chmod 600 prisma/dev.db
-```
+### 3. Keamanan File SQLite (`dev.db`)
+Karena SQLite menyimpan seluruh data dalam satu file di direktori `prisma/dev.db`, pastikan permission akses file ini di server dibatasi hanya untuk user sistem yang menjalankan aplikasi Node.js. Jangan membiarkan direktori `prisma` terekspos ke publik.
 
-### 4. Backup Berkala
-Gunakan menu **Pengaturan > Pencadangan & Pemulihan** secara periodik untuk mengunduh cadangan database `.db`. Simpan cadangan database di media penyimpanan eksternal yang aman dan terpisah dari server utama.
+### 4. Protokol HTTPS
+Selalu jalankan aplikasi di balik reverse proxy (seperti Nginx atau Caddy) yang dikonfigurasi dengan sertifikat SSL (HTTPS). Hal ini penting agar cookie sesi `bumdes_token` dikirimkan secara aman (*secure cookie*) dan terhindar dari serangan penyadapan (*man-in-the-middle*).
