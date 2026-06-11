@@ -2,7 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1] - 2026-06-11
+
+### Fixed
+- **Tampilan Cetak Laporan Pertanggungjawaban (LPJ) Tahunan**:
+  - Menyembunyikan sidebar navigasi (`aside`) dan header topbar secara permanen pada versi cetak (media print) menggunakan selektor CSS spesifik tinggi guna menghindari kebocoran elemen antarmuka website ke kertas laporan.
+  - Memperbaiki masalah layout halaman kosong atau terpotong dengan menyingkirkan pembatasan tinggi (`height` / `h-*`) dan perilaku `overflow` pada elemen container induk (`html`, `body`, `<main>`) saat dicetak.
+  - Mengatur tata letak Cover (Halaman 1) dan Lembar Pengesahan (Halaman 2) LPJ agar mengisi tinggi halaman secara proporsional (menggunakan class `.print-page-layout-center` dan `.print-page-layout` baru) alih-alih berhimpitan rapat di bagian atas.
+
 ## [1.6.0] - 2026-06-11
+
 
 ### Added
 - **Modul Narasi LPJ Tahunan & Arsip Multi-Tahun (Kemendesa PDTT)**:
