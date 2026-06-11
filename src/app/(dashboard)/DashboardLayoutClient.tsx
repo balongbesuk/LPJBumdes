@@ -157,8 +157,121 @@ export default function DashboardLayoutClient({
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .print-only {
+          display: none !important;
+        }
+        @media print {
+          /* Hide sidebar, headers and other layout elements with high specificity */
+          body aside, 
+          body header, 
+          body button, 
+          body nav, 
+          body select, 
+          body .no-print, 
+          body [class*="no-print"], 
+          body .no-print *, 
+          aside.flex, 
+          aside.flex-col, 
+          header.flex, 
+          button.flex,
+          .no-print {
+            display: none !important;
+          }
+
+          /* Reset layout structures */
+          html, body {
+            background: white !important;
+            color: black !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            position: static !important;
+          }
+
+          /* Reset container wrappers */
+          .min-h-screen,
+          .flex,
+          .flex-col,
+          .flex-1 {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            position: static !important;
+            background: transparent !important;
+          }
+
+          main {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            position: static !important;
+            display: block !important;
+          }
+
+          /* Show print-only view */
+          .print-only {
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+            position: static !important;
+          }
+
+          .print-only .grid {
+            display: grid !important;
+          }
+          
+          .print-only .flex {
+            display: flex !important;
+          }
+
+          .print-container {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            background: transparent !important;
+          }
+
+          /* Page formatting */
+          tr, td, th, blockquote, pre {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          .page-break-before {
+            page-break-before: always !important;
+            break-before: page !important;
+            margin-top: 0 !important;
+            padding-top: 1.5rem !important;
+          }
+
+          /* Specific page layout overrides to allow vertical page stretching when printed */
+          .print-page-layout {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            height: 85vh !important;
+            box-sizing: border-box !important;
+          }
+
+          .print-page-layout-center {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            height: 85vh !important;
+            text-align: center !important;
+            box-sizing: border-box !important;
+          }
+        }
+      `}} />
       {/* Sidebar Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 shrink-0 sticky top-0 h-screen">
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 shrink-0 sticky top-0 h-screen no-print">
         <div className="p-6 border-b border-slate-50 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20">
             <Building2 className="w-5 h-5" />
@@ -282,7 +395,7 @@ export default function DashboardLayoutClient({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar */}
-        <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 h-16 flex items-center justify-between px-6 z-40">
+        <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 h-16 flex items-center justify-between px-6 z-40 no-print">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileOpen(true)}

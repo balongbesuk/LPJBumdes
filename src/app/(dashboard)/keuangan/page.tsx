@@ -121,31 +121,6 @@ export default function KeuanganPage() {
 
   return (
     <div className="space-y-6">
-      {/* Printable CSS Override */}
-      <style jsx global>{`
-        @media print {
-          aside, header, nav, button, .no-print, select {
-            display: none !important;
-          }
-          main {
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 100% !important;
-            width: 100% !important;
-          }
-          .print-container {
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            background: transparent !important;
-          }
-          .print-title {
-            display: block !important;
-            text-align: center;
-            margin-bottom: 2rem;
-          }
-        }
-      `}</style>
 
       {/* Header (No print) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print">
@@ -167,19 +142,21 @@ export default function KeuanganPage() {
       </div>
 
       {/* Document print header */}
-      <div className="hidden print-title text-center space-y-1">
-        <h1 className="text-xl font-bold uppercase text-slate-900">{settings?.bumdes_name || "BUMDES"}</h1>
-        <p className="text-sm font-semibold text-slate-500">
-          {settings?.village_name ? `Desa ${settings.village_name}, Kecamatan ${settings.district_name}, Kabupaten ${settings.regency_name}` : ""}
-        </p>
-        <div className="border-b-2 border-slate-900 my-4" />
-        <h2 className="text-sm font-bold uppercase text-slate-800 mt-2">
-          {activeTab === "labarugi" && "Laporan Perhitungan Sisa Hasil Usaha (Laba / Rugi)"}
-          {activeTab === "neraca" && "Laporan Posisi Keuangan (Neraca)"}
-          {activeTab === "shu" && "Daftar Rencana Pembagian Hasil Usaha (SHU)"}
-        </h2>
-        <p className="text-xs text-slate-400 font-semibold">Tahun Anggaran Berjalan (T.A 2026)</p>
-      </div>
+      {activeTab !== "lpjtahunan" && (
+        <div className="hidden print-title text-center space-y-1">
+          <h1 className="text-xl font-bold uppercase text-slate-900">{settings?.bumdes_name || "BUMDES"}</h1>
+          <p className="text-sm font-semibold text-slate-500">
+            {settings?.village_name ? `Desa ${settings.village_name}, Kecamatan ${settings.district_name}, Kabupaten ${settings.regency_name}` : ""}
+          </p>
+          <div className="border-b-2 border-slate-900 my-4" />
+          <h2 className="text-sm font-bold uppercase text-slate-800 mt-2">
+            {activeTab === "labarugi" && "Laporan Perhitungan Sisa Hasil Usaha (Laba / Rugi)"}
+            {activeTab === "neraca" && "Laporan Posisi Keuangan (Neraca)"}
+            {activeTab === "shu" && "Daftar Rencana Pembagian Hasil Usaha (SHU)"}
+          </h2>
+          <p className="text-xs text-slate-400 font-semibold">Tahun Anggaran Berjalan (T.A 2026)</p>
+        </div>
+      )}
 
       {/* Tabs navigation (No print) */}
       <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-100 rounded-3xl w-full md:w-fit no-print">

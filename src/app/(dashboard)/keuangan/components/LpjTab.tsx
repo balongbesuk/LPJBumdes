@@ -285,9 +285,9 @@ export default function LpjTab({ report, settings }: LpjTabProps) {
 
       {/* Compiled Book-Style Printable Layout (Hidden on Screen, Visible on Print) */}
       {narrative && (
-        <div className="hidden print-area bg-white text-slate-900 font-serif leading-relaxed text-[11px] p-12 min-h-screen">
+        <div className="print-only bg-white text-slate-900 font-serif leading-relaxed text-[11px] p-12 min-h-screen">
           {/* COVER PAGE */}
-          <div className="flex flex-col items-center justify-between h-[90vh] text-center mb-16 pb-12 border-b border-slate-200">
+          <div className="print-page-layout-center pb-12 border-b border-slate-200">
             <div className="space-y-4 pt-16">
               <h1 className="text-xl font-bold uppercase tracking-wider text-slate-900">
                 LAPORAN PERTANGGUNGJAWABAN TAHUNAN
@@ -315,7 +315,7 @@ export default function LpjTab({ report, settings }: LpjTabProps) {
           </div>
 
           {/* PAGE BREAK / LEMBAR PENGESAHAN */}
-          <div className="page-break-before h-[90vh] flex flex-col justify-between mb-16 border-b border-slate-200 py-16">
+          <div className="page-break-before print-page-layout py-16 border-b border-slate-200">
             <div className="text-center space-y-1">
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">LEMBAR PENGESAHAN</h3>
               <p className="text-[11px] font-bold text-slate-650 uppercase">LAPORAN PERTANGGUNGJAWABAN BUM DESA</p>
