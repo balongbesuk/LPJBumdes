@@ -21,6 +21,7 @@ import PajakTab from "./components/PajakTab"
 import AsetTab from "./components/AsetTab"
 import ShuTab from "./components/ShuTab"
 import TutupBukuTab from "./components/TutupBukuTab"
+import LpjTab from "./components/LpjTab"
 
 interface ReportData {
   labaRugi: {
@@ -56,7 +57,7 @@ interface ReportData {
 
 export default function KeuanganPage() {
   const settings = useSettings()
-  const [activeTab, setActiveTab] = useState<"labarugi" | "neraca" | "aruskasmodal" | "bku" | "pajak" | "aset" | "shu" | "tutupbuku">("labarugi")
+  const [activeTab, setActiveTab] = useState<"labarugi" | "neraca" | "aruskasmodal" | "bku" | "pajak" | "aset" | "shu" | "tutupbuku" | "lpjtahunan">("labarugi")
   const [report, setReport] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -254,6 +255,15 @@ export default function KeuanganPage() {
           <Lock className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
           Tutup Buku
         </button>
+        <button
+          onClick={() => setActiveTab("lpjtahunan")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center ${
+            activeTab === "lpjtahunan" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5 mr-1.5 text-emerald-650" />
+          LPJ Tahunan Resmi
+        </button>
       </div>
 
       {/* Tab Contents */}
@@ -287,6 +297,10 @@ export default function KeuanganPage() {
 
       {activeTab === "tutupbuku" && (
         <TutupBukuTab />
+      )}
+
+      {activeTab === "lpjtahunan" && (
+        <LpjTab report={report} settings={settings} />
       )}
     </div>
   )

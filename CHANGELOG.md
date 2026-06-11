@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-06-11
+
+### Added
+- **Modul Narasi LPJ Tahunan & Arsip Multi-Tahun (Kemendesa PDTT)**:
+  - Ditambahkan skema data `LpjNarrative` untuk menyimpan bab teks narasi Bab I s.d. Bab VIII per tahun anggaran.
+  - Ditambahkan rute API `/api/keuangan/lpj-narrative` untuk memuat dan menyimpan data draf LPJ dengan template bawaan standar Kemendesa PDTT.
+  - Ditambahkan komponen editor tab `LpjTab.tsx` di frontend dengan pemilih arsip tahun buku terintegrasi.
+  - Ditambahkan sistem *Archival Lock* (Kunci Arsip): Kolom teks otomatis terkunci (*read-only*) jika tahun bersangkutan telah dilakukan tutup buku.
+  - Diimplementasikan modul pencetakan terpadu: Saat dicetak/ekspor, sistem otomatis meng-compile Cover Buku LPJ, Lembar Pengesahan, Bab I-VIII, disusul Lampiran Keuangan (Neraca SAK EMKM, Laba Rugi, SHU) dan blok tanda tangan formal.
+
 ## [1.5.0] - 2026-06-11
 
 ### Added

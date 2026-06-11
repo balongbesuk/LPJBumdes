@@ -251,3 +251,17 @@ model MeetingMinutes {
   createdAt DateTime @default(now())
 }
 
+model LpjNarrative {
+  year      Int      @id
+  bab1      String   // Ikhtisar Pencapaian
+  bab2      String   // Laporan Manajemen (Direktur & Pengawas)
+  bab3      String   // Profil BUM Desa
+  bab4      String   // Kinerja BUM Desa
+  bab5      String   // Permasalahan dan Strategi
+  bab6      String   // Potensi dan Peluang
+  bab7      String   // Rencana Kerja
+  bab8      String   // Penutup
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
