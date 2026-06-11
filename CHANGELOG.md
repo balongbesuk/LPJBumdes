@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-06-11
+
+### Added
+- **Cadangan Kerugian Penurunan Nilai (CKPN) Simpan Pinjam**:
+  - Ditambahkan endpoint `/api/simpan-pinjam/ckpn` untuk hitung cadangan piutang (Lancar 0.5%, Terlambat/Macet 50%) dan memposting jurnal penyesuaian.
+  - Ditambahkan komponen antarmuka modal `CkpnModal.tsx` di frontend.
+  - Otomatis mendaftarkan akun ledger `1-1450` (Penyisihan Piutang) dan `5-1600` (Beban Kerugian Piutang) jika belum ada.
+- **Otomatisasi Jurnal Penutupan Akhir Tahun (Annual Closing)**:
+  - Ditambahkan endpoint `/api/keuangan/closing` untuk melakukan Tutup Buku Tahunan (reset akun Pendapatan/Beban ke 0, transfer laba bersih berjalan ke Laba Ditahan `3-1200` pada 31 Desember, serta kunci periode otomatis).
+  - Terintegrasi antarmuka eksekusi Tutup Buku Tahunan pada `TutupBukuTab.tsx`.
+
+### Fixed
+- **Integrasi Pajak Neraca**:
+  - Memperbaiki ketidakseimbangan Laporan Neraca dengan memasukkan akun `2-1400` (Hutang Pajak) ke dalam kalkulasi total liabilitas dan total pasiva.
+
 ## [1.4.0] - 2026-06-10
 
 ### Changed

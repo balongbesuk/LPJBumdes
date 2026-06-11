@@ -17,6 +17,7 @@ export async function GET() {
     const expGedung = await getAccountBalance("5-1300")
     const expPenyusutan = await getAccountBalance("5-1400")
     const expAdminBank = await getAccountBalance("5-1500")
+    const expCkpn = await getAccountBalance("5-1600")
 
     // Laba Rugi calculations
     const revenues = [
@@ -32,7 +33,8 @@ export async function GET() {
       { code: "5-1200", name: "Biaya Operasional Unit Lapak & Warung", amount: expLapak },
       { code: "5-1300", name: "Biaya Operasional Unit Gedung", amount: expGedung },
       { code: "5-1400", name: "Biaya Penyusutan Aktiva Tetap", amount: expPenyusutan },
-      { code: "5-1500", name: "Biaya Administrasi Bank & Pajak", amount: expAdminBank }
+      { code: "5-1500", name: "Biaya Administrasi Bank & Pajak", amount: expAdminBank },
+      { code: "5-1600", name: "Beban Kerugian Piutang Tak Tertagih (CKPN)", amount: expCkpn }
     ]
 
     const totalRevenue = revenues.reduce((sum, r) => sum + r.amount, 0)
@@ -54,12 +56,19 @@ export async function GET() {
     const accumDepCredit = accumDepLines.filter(l => l.type === "CREDIT").reduce((sum, l) => sum + l.amount, 0)
     const assetAccumDep = accumDepCredit - accumDepDebit // Positive as credit, but will subtract in Assets presentation
 
+    // Contra asset for Piutang (CKPN)
+    const ckpnLines = await db.journalLine.findMany({ where: { accountCode: "1-1450" } })
+    const ckpnDebit = ckpnLines.filter(l => l.type === "DEBIT").reduce((sum, l) => sum + l.amount, 0)
+    const ckpnCredit = ckpnLines.filter(l => l.type === "CREDIT").reduce((sum, l) => sum + l.amount, 0)
+    const assetCkpn = ckpnCredit - ckpnDebit
+
     const currentAssets = [
       { name: "Kas/Bank BUMDES", amount: assetKasBumdes },
       { name: "Kas/Bank Unit Gedung (GSG)", amount: assetKasGedung },
       { name: "Kas/Bank Unit Lapak & Warung", amount: assetKasLapak },
       { name: "Piutang Pinjaman Masyarakat", amount: assetPiutangMasy },
-      { name: "Piutang Pinjaman Gapoktan", amount: assetPiutangGapoktan }
+      { name: "Piutang Pinjaman Gapoktan", amount: assetPiutangGapoktan },
+      { name: "Penyisihan Kerugian Piutang (CKPN)", amount: -assetCkpn }
     ]
 
     const totalCurrentAssets = currentAssets.reduce((sum, a) => sum + a.amount, 0)
@@ -70,11 +79,13 @@ export async function GET() {
     const liabPokok = await getAccountBalance("2-1100")
     const liabWajib = await getAccountBalance("2-1200")
     const liabShu = await getAccountBalance("2-1300")
+    const liabPajak = await getAccountBalance("2-1400")
 
     const liabilities = [
       { name: "Tabungan Simpanan Pokok Anggota", amount: liabPokok },
       { name: "Tabungan Simpanan Wajib Anggota", amount: liabWajib },
-      { name: "Hutang SHU Belum Dibagi", amount: liabShu }
+      { name: "Hutang SHU Belum Dibagi", amount: liabShu },
+      { name: "Hutang Pajak", amount: liabPajak }
     ]
     const totalLiabilities = liabilities.reduce((sum, l) => sum + l.amount, 0)
 

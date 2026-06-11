@@ -31,6 +31,7 @@ import MemberModal from "./components/MemberModal"
 import SavingModal from "./components/SavingModal"
 import LoanModal from "./components/LoanModal"
 import RepaymentModal from "./components/RepaymentModal"
+import CkpnModal from "./components/CkpnModal"
 
 interface Member {
   id: string
@@ -75,6 +76,7 @@ export default function SimpanPinjamPage() {
   
   // Modals state
   const [activeModal, setActiveModal] = useState<"new_member" | "saving" | "loan" | "repayment" | "edit_member" | null>(null)
+  const [isCkpnOpen, setIsCkpnOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null)
 
@@ -627,6 +629,14 @@ export default function SimpanPinjamPage() {
             </div>
              <div className="flex items-center gap-2">
               <button
+                type="button"
+                onClick={() => setIsCkpnOpen(true)}
+                className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-bold px-4 py-2.5 rounded-2xl text-xs border border-slate-200 shadow-sm transition-all active:scale-95 shrink-0 w-fit"
+              >
+                <Calculator className="w-4 h-4 text-emerald-600" />
+                Cadangan Piutang (CKPN)
+              </button>
+              <button
                 onClick={() => {
                   setNewMemberName("")
                   setNewMemberPayPokok(true)
@@ -724,6 +734,12 @@ export default function SimpanPinjamPage() {
           )}
 
           {/* Modals Container */}
+          <CkpnModal
+            isOpen={isCkpnOpen}
+            onClose={() => setIsCkpnOpen(false)}
+            onSuccess={fetchData}
+          />
+
           <MemberModal
             activeModal={activeModal}
             selectedMember={selectedMember}

@@ -17,6 +17,8 @@ export default function TutupBukuTab() {
   const [selectedYear, setSelectedYear] = useState<number>(2026)
   const [togglingLock, setTogglingLock] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [closingLoading, setClosingLoading] = useState(false)
+  const [closingSuccess, setClosingSuccess] = useState<string | null>(null)
 
   const fetchLocks = async () => {
     try {
@@ -58,6 +60,35 @@ export default function TutupBukuTab() {
       setError(err.message)
     } finally {
       setTogglingLock(null)
+    }
+  }
+
+  const handleYearClosing = async () => {
+    const isConfirmed = window.confirm(
+      `Apakah Anda yakin ingin menjalankan Tutup Buku Tahunan & Jurnal Penutup untuk tahun ${selectedYear}?\n\nTindakan ini akan:\n1. Mengakumulasi laba/rugi bersih berjalan tahun ${selectedYear}.\n2. Mentransfer laba bersih tersebut ke akun Laba Ditahan (3-1200).\n3. Mereset saldo akun Pendapatan (Kepala 4) dan Beban (Kepala 5) menjadi Rp 0.\n4. Mengunci pembukuan bulan Desember ${selectedYear} secara otomatis.\n\nTindakan ini tidak dapat dibatalkan.`
+    )
+    if (!isConfirmed) return
+
+    setClosingLoading(true)
+    setError(null)
+    setClosingSuccess(null)
+    try {
+      const res = await fetch("/api/keuangan/closing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ year: selectedYear })
+      })
+      const result = await res.json()
+      if (result.success) {
+        setClosingSuccess(result.message)
+        await fetchLocks()
+      } else {
+        throw new Error(result.error || "Gagal menjalankan tutup buku tahunan")
+      }
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setClosingLoading(false)
     }
   }
 
@@ -180,6 +211,44 @@ export default function TutupBukuTab() {
             </div>
           )
         })}
+      </div>
+
+      {/* Tutup Buku Tahunan Card */}
+      <div className="mt-8 border-t border-slate-100 pt-6">
+        <div className="bg-slate-50 border border-slate-150 p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-xl">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-2">
+              <ShieldAlert className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+              Tutup Buku & Jurnal Penutup Akhir Tahun (Annual Closing)
+            </h4>
+            <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">
+              Jalankan untuk mereset seluruh saldo akun Pendapatan (Kepala 4) dan Beban (Kepala 5) menjadi Rp 0 pada akhir tahun buku {selectedYear}. Nilai akumulasi Laba Bersih tahun berjalan akan dipindahkan ke Modal Laba Ditahan (3-1200) dan periode Desember {selectedYear} akan dikunci secara otomatis.
+            </p>
+          </div>
+
+          <div className="shrink-0 flex flex-col items-stretch md:items-end gap-2">
+            {closingSuccess && (
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-lg text-center">
+                {closingSuccess}
+              </span>
+            )}
+            <button
+              type="button"
+              disabled={closingLoading}
+              onClick={handleYearClosing}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl text-[10px] transition shadow-md shadow-emerald-600/10 active:scale-95 flex items-center justify-center gap-1.5"
+            >
+              {closingLoading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Memproses Penutupan...
+                </>
+              ) : (
+                `Jalankan Jurnal Penutup Tahun ${selectedYear}`
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
