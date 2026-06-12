@@ -119,3 +119,17 @@ export async function runOrphanCleanup() {
     deletedFiles,
   };
 }
+
+/**
+ * Enable SQLite WAL (Write-Ahead Logging) mode
+ */
+export async function enableWalMode() {
+  try {
+    const result = await db.$queryRawUnsafe<{ journal_mode: string }[]>("PRAGMA journal_mode=WAL;");
+    const mode = result?.[0]?.journal_mode || "unknown";
+    return { success: true, mode };
+  } catch (error: any) {
+    console.error("Failed to enable WAL mode:", error);
+    return { success: false, error: error.message };
+  }
+}

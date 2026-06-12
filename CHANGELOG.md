@@ -17,6 +17,12 @@ All notable changes to this project will be documented in this file.
   - Pencadangan database SQLite (`prisma/dev.db`) terjadwal ke direktori `backups/` dengan retensi 10 file cadangan terbaru.
   - Pembersihan berkas sampah terunggah (orphan uploads) di `public/uploads/` yang tidak memiliki referensi posting jurnal di database (dengan grace period 1 jam).
   - Menyediakan script CLI (`npm run maintenance`) dan rute API terproteksi token rahasia `/api/cron/maintenance`.
+- **Akurasi Nilai Penyusutan Aset**:
+  - Mengintegrasikan fungsi pembulatan matematika (`Math.round()`) pada proses kalkulasi penyusutan tahunan (baik di modul aset tetap maupun di proses otomatis tutup buku tahunan) untuk menyingkirkan angka pecahan desimal pada Laporan Neraca dan Laba Rugi.
+- **Optimasi Konkurensi Database (WAL Mode)**:
+  - Mengaktifkan mode jurnal Write-Ahead Logging (WAL) pada database SQLite secara otomatis saat inisialisasi / pemeliharaan sistem dijalankan. Ini mencegah error lock transaksi ketika banyak pengguna mencatat transaksi secara bersamaan.
+- **Halaman Penanganan Crash Runtime Kustom (Error Boundaries)**:
+  - Ditambahkan penanganan crash tingkat root `global-error.tsx` (berlatar gelap) dan tingkat dashboard `error.tsx` (terintegrasi di layout tanpa memutus tampilan sidebar) untuk menjaga stabilitas pengalaman pengguna.
 
 ## [1.8.0] - 2026-06-12
 

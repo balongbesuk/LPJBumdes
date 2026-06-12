@@ -1,4 +1,4 @@
-import { runBackup, runOrphanCleanup } from "../src/lib/maintenance";
+import { runBackup, runOrphanCleanup, enableWalMode } from "../src/lib/maintenance";
 import { db } from "../src/lib/db";
 
 async function main() {
@@ -27,6 +27,19 @@ async function main() {
     }
   } catch (error) {
     console.error("   ✗ Gagal menjalankan pembersihan berkas sampah:", error);
+  }
+
+  try {
+    console.log("\n3. Mengonfigurasi mode WAL (Write-Ahead Logging) SQLite...");
+    const walResult = await enableWalMode();
+    if (walResult.success) {
+      console.log(`   ✓ Berhasil mengaktifkan/memverifikasi mode WAL.`);
+      console.log(`   - Status journal_mode: ${walResult.mode}`);
+    } else {
+      console.log(`   ✗ Gagal mengaktifkan mode WAL: ${walResult.error}`);
+    }
+  } catch (error) {
+    console.error("   ✗ Gagal menjalankan konfigurasi mode WAL:", error);
   }
 
   console.log("\n=== PROSES PEMELIHARAAN SELESAI ===");

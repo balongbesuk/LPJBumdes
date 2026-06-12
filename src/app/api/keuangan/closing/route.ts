@@ -90,8 +90,8 @@ export async function POST(request: Request) {
           const updatedAssetIds: string[] = []
 
           for (const asset of activeAssets) {
-            // Annual depreciation amount
-            const annualDep = asset.purchaseCost * (asset.depreciationRate / 100)
+            // Annual depreciation amount (rounded to nearest whole Rupiah)
+            const annualDep = Math.round(asset.purchaseCost * (asset.depreciationRate / 100))
             // Ensure accumDep doesn't exceed purchaseCost
             const maxAllowedDep = asset.purchaseCost - asset.accumDep
             const deprecAmount = Math.min(annualDep, maxAllowedDep)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runBackup, runOrphanCleanup } from "@/lib/maintenance";
+import { runBackup, runOrphanCleanup, enableWalMode } from "@/lib/maintenance";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,12 +20,14 @@ export async function GET(request: NextRequest) {
     console.log("Starting cron maintenance task...");
     const backupResult = await runBackup();
     const cleanupResult = await runOrphanCleanup();
+    const walResult = await enableWalMode();
 
     return NextResponse.json({
       success: true,
       message: "Pemeliharaan berhasil dijalankan",
       backup: backupResult,
-      cleanup: cleanupResult
+      cleanup: cleanupResult,
+      wal: walResult
     });
   } catch (error: any) {
     console.error("Cron maintenance error:", error);
