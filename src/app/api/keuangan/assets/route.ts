@@ -19,12 +19,24 @@ export async function GET() {
   }
 }
 
+import { assetSchema } from "@/lib/validation"
+
 // POST: Add a new fixed asset purchase
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { date, name, purchaseCost, economicLife } = body
 
+    // Validate request body using Zod schema
+    const validationResult = assetSchema.safeParse(body)
+    if (!validationResult.success) {
+      const errorMsg = validationResult.error.issues.map(err => err.message).join(", ")
+      return NextResponse.json(
+        { success: false, error: `Validasi gagal: ${errorMsg}` },
+        { status: 400 }
+      )
+    }
+
+    const { date, name, purchaseCost, economicLife } = validationResult.data
     const txDate = date ? new Date(date) : new Date()
 
     if (await isPeriodLocked(txDate)) {
@@ -34,22 +46,8 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!name || !purchaseCost || !economicLife) {
-      return NextResponse.json(
-        { success: false, error: "Semua data (nama aset, harga perolehan, umur ekonomis) harus diisi." },
-        { status: 400 }
-      )
-    }
-
-    const costVal = parseFloat(purchaseCost)
-    const lifeVal = parseInt(economicLife, 10)
-
-    if (costVal <= 0 || lifeVal <= 0) {
-      return NextResponse.json(
-        { success: false, error: "Harga perolehan dan umur ekonomis harus lebih dari 0." },
-        { status: 400 }
-      )
-    }
+    const costVal = purchaseCost
+    const lifeVal = economicLife
 
     // Auto-generate asset code: AST-001, AST-002, etc.
     const lastAsset = await db.fixedAsset.findFirst({

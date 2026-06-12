@@ -15,6 +15,18 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
   const [showAddBkuModal, setShowAddBkuModal] = useState(false)
   const [modalMode, setModalMode] = useState<"EXPENSE" | "RECEIPT">("EXPENSE")
   
+  // Filtering & Pagination states
+  const [filterMonth, setFilterMonth] = useState<string>("all")
+  const [filterYear, setFilterYear] = useState<string>("all")
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(20)
+  const [paginationInfo, setPaginationInfo] = useState<{
+    total: number
+    pages: number
+    currentPage: number
+    limit: number
+  } | null>(null)
+  
   // BKU Form states
   const [bkuDesc, setBkuDesc] = useState("")
   const [bkuUnit, setBkuUnit] = useState<"SP" | "GEDUNG" | "LAHAN" | "PPOB" | "UMUM">("UMUM")
@@ -29,12 +41,21 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
   const [formError, setFormError] = useState<string | null>(null)
   const [formSuccess, setFormSuccess] = useState<string | null>(null)
 
-  const fetchBku = async () => {
+  const fetchBku = async (page = currentPage, month = filterMonth, year = filterYear, limit = pageSize) => {
     setLoadingBku(true)
     try {
-      const res = await fetch("/api/keuangan/cash-book")
+      const query = new URLSearchParams()
+      if (month !== "all") query.append("month", month)
+      if (year !== "all") query.append("year", year)
+      query.append("page", page.toString())
+      query.append("limit", limit.toString())
+
+      const res = await fetch(`/api/keuangan/cash-book?${query.toString()}`)
       const result = await res.json()
-      if (result.success) setCashBook(result.data || [])
+      if (result.success) {
+        setCashBook(result.data || [])
+        setPaginationInfo(result.pagination || null)
+      }
     } catch (err) {
       console.error(err)
     } finally {
@@ -68,8 +89,8 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
   }
 
   useEffect(() => {
-    fetchBku()
-  }, [])
+    fetchBku(currentPage, filterMonth, filterYear, pageSize)
+  }, [currentPage, filterMonth, filterYear, pageSize])
 
   const openAddModal = (mode: "EXPENSE" | "RECEIPT") => {
     setModalMode(mode)
@@ -126,7 +147,8 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
         )
         setBkuDesc("")
         setBkuAmount("")
-        fetchBku()
+        fetchBku(1, filterMonth, filterYear, pageSize)
+        setCurrentPage(1)
         onRefreshReport()
         setTimeout(() => {
           setShowAddBkuModal(false)
@@ -164,6 +186,68 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
             <Plus className="w-3.5 h-3.5" />
             Catat Pengeluaran
           </button>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-3 bg-slate-50/50 border border-slate-100 p-3 rounded-2xl no-print text-xs">
+        <div className="flex items-center gap-1.5">
+          <span className="font-semibold text-slate-500">Filter:</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={filterMonth}
+            onChange={(e) => {
+              setFilterMonth(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 outline-none cursor-pointer focus:border-blue-500 transition-colors"
+          >
+            <option value="all">Semua Bulan</option>
+            <option value="1">Januari</option>
+            <option value="2">Februari</option>
+            <option value="3">Maret</option>
+            <option value="4">April</option>
+            <option value="5">Mei</option>
+            <option value="6">Juni</option>
+            <option value="7">Juli</option>
+            <option value="8">Agustus</option>
+            <option value="9">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Desember</option>
+          </select>
+          <select
+            value={filterYear}
+            onChange={(e) => {
+              setFilterYear(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 outline-none cursor-pointer focus:border-blue-500 transition-colors"
+          >
+            <option value="all">Semua Tahun</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+        
+        <div className="sm:ml-auto flex items-center gap-2">
+          <span className="text-slate-400 font-medium">Tampilkan:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(parseInt(e.target.value, 10))
+              setCurrentPage(1)
+            }}
+            className="px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-700 outline-none cursor-pointer focus:border-blue-500 transition-colors"
+          >
+            <option value="10">10 Baris</option>
+            <option value="20">20 Baris</option>
+            <option value="50">50 Baris</option>
+            <option value="100">100 Baris</option>
+          </select>
         </div>
       </div>
 
@@ -241,6 +325,31 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
           </table>
         </div>
       </div>
+
+      {/* Pagination Controls */}
+      {paginationInfo && paginationInfo.pages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50 border border-slate-100 p-4 rounded-3xl no-print text-xs">
+          <div className="text-slate-500 font-medium">
+            Menampilkan halaman <span className="font-bold text-slate-700">{paginationInfo.currentPage}</span> dari <span className="font-bold text-slate-700">{paginationInfo.pages}</span> (Total <span className="font-bold text-slate-700">{paginationInfo.total}</span> entri)
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={paginationInfo.currentPage === 1 || loadingBku}
+              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Sebelumnya
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(paginationInfo.pages, prev + 1))}
+              disabled={paginationInfo.currentPage === paginationInfo.pages || loadingBku}
+              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Selanjutnya
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal BKU: Catat Pengeluaran / Penerimaan */}
       {showAddBkuModal && (

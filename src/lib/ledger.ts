@@ -13,8 +13,8 @@ export async function getAccountBalance(accountCode: string): Promise<number> {
 
   if (!account) return 0
 
-  const debitSum = sums.find(s => s.type === "DEBIT")?._sum.amount || 0
-  const creditSum = sums.find(s => s.type === "CREDIT")?._sum.amount || 0
+  const debitSum = sums.find((s: any) => s.type === "DEBIT")?._sum.amount || 0
+  const creditSum = sums.find((s: any) => s.type === "CREDIT")?._sum.amount || 0
 
   if (account.type === "ASSET" || account.type === "EXPENSE") {
     return debitSum - creditSum
@@ -47,7 +47,7 @@ export async function postJournalEntry(
     throw new Error(`Jurnal tidak seimbang (debit: ${debitTotal}, kredit: ${creditTotal}). Selisih: ${Math.abs(debitTotal - creditTotal)}`)
   }
 
-  return await db.$transaction(async (tx) => {
+  return await db.$transaction(async (tx: any) => {
     const entry = await tx.journalEntry.create({
       data: {
         date,

@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] - 2026-06-12
+
+### Added
+- **Type Safety & Validasi Payload (Zod)**:
+  - Terintegrasi pustaka `zod` untuk validasi server-side pada input transaksi Buku Kas Umum (BKU) dan penambahan Aset Tetap baru.
+  - Pengecekan mencakup validasi tipe data, nominal positif, dan penyeimbangan total nominal Debit dengan Kredit.
+- **Filter & Pagination BKU**:
+  - Menambahkan filter Bulan, Tahun, dan Limit baris di halaman Buku Kas Umum untuk optimasi pemuatan data.
+  - Implementasi pagination halaman (Sebelumnya/Berikutnya) di frontend `BkuTab.tsx` dan backend API route.
+- **Pengamanan Unggah Berkas**:
+  - Batas ukuran file maksimal 5MB dan pembatasan MIME type / extension hanya untuk file PDF, JPG, JPEG, dan PNG.
+- **Fitur Pemeliharaan Otomatis (Maintenance)**:
+  - Pencadangan database SQLite (`prisma/dev.db`) terjadwal ke direktori `backups/` dengan retensi 10 file cadangan terbaru.
+  - Pembersihan berkas sampah terunggah (orphan uploads) di `public/uploads/` yang tidak memiliki referensi posting jurnal di database (dengan grace period 1 jam).
+  - Menyediakan script CLI (`npm run maintenance`) dan rute API terproteksi token rahasia `/api/cron/maintenance`.
+
 ## [1.8.0] - 2026-06-12
 
 ### Added
