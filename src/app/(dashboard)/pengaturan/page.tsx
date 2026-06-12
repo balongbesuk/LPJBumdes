@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Users
 } from "lucide-react"
+import { invalidateSettingsCache } from "@/context/SettingsContext"
 import UsersTab from "./UsersTab"
 
 export default function PengaturanPage() {
@@ -35,7 +36,20 @@ export default function PengaturanPage() {
     shu_pengawas_pct: "0",
     shu_sosial_pct: "0",
     shu_modal_pct: "0",
-    shu_desa_pct: "0"
+    shu_desa_pct: "0",
+    leader_name: "",
+    leader_nip: "",
+    director_name: "",
+    director_nip: "",
+    treasurer_name: "",
+    treasurer_nip: "",
+    supervisor_name: "",
+    supervisor_nip: "",
+    module_sp: "true",
+    module_gedung: "true",
+    module_lahan: "true",
+    module_ppob: "true",
+    module_persuratan: "true"
   })
   
   const [loading, setLoading] = useState(true)
@@ -67,7 +81,20 @@ export default function PengaturanPage() {
           shu_pengawas_pct: result.data.shu_pengawas_pct || "0",
           shu_sosial_pct: result.data.shu_sosial_pct || "0",
           shu_modal_pct: result.data.shu_modal_pct || "0",
-          shu_desa_pct: result.data.shu_desa_pct || "0"
+          shu_desa_pct: result.data.shu_desa_pct || "0",
+          leader_name: result.data.leader_name || "",
+          leader_nip: result.data.leader_nip || "",
+          director_name: result.data.director_name || "",
+          director_nip: result.data.director_nip || "",
+          treasurer_name: result.data.treasurer_name || "",
+          treasurer_nip: result.data.treasurer_nip || "",
+          supervisor_name: result.data.supervisor_name || "",
+          supervisor_nip: result.data.supervisor_nip || "",
+          module_sp: result.data.module_sp !== "false" ? "true" : "false",
+          module_gedung: result.data.module_gedung !== "false" ? "true" : "false",
+          module_lahan: result.data.module_lahan !== "false" ? "true" : "false",
+          module_ppob: result.data.module_ppob !== "false" ? "true" : "false",
+          module_persuratan: result.data.module_persuratan !== "false" ? "true" : "false"
         })
       } else {
         throw new Error(result.error || "Gagal memuat pengaturan")
@@ -120,6 +147,7 @@ export default function PengaturanPage() {
       })
       const result = await res.json()
       if (result.success) {
+        invalidateSettingsCache()
         setSuccessMsg("Pengaturan berhasil disimpan!")
         setTimeout(() => setSuccessMsg(null), 3000)
       } else {
@@ -409,13 +437,49 @@ export default function PengaturanPage() {
                     />
                   </div>
                 </div>
+              {/* Active Modules Settings */}
+              <div className="pt-5 border-t border-slate-100/80 space-y-4">
+                <div>
+                  <h3 className="text-slate-800 font-bold text-xs uppercase tracking-wider block">
+                    Aktifkan Modul & Unit Usaha
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                    Centang modul usaha yang aktif di BUMDES Anda untuk menampilkannya di navigasi sidebar.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  {[
+                    { key: "module_sp", label: "Simpan Pinjam" },
+                    { key: "module_gedung", label: "Sewa Gedung (GSG)" },
+                    { key: "module_lahan", label: "Sewa Lahan & Lapak" },
+                    { key: "module_ppob", label: "Rekap PPOB" },
+                    { key: "module_persuratan", label: "Persuratan & SK" }
+                  ].map((mod) => (
+                    <label key={mod.key} className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        name={mod.key}
+                        checked={formData[mod.key as keyof typeof formData] !== "false"}
+                        onChange={(e) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            [mod.key]: e.target.checked ? "true" : "false"
+                          }))
+                        }}
+                        className="w-4.5 h-4.5 rounded-lg text-emerald-600 focus:ring-emerald-500/20 border-slate-350 bg-slate-50 cursor-pointer"
+                      />
+                      <span className="text-xs font-semibold text-slate-700">{mod.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-6 mt-6 border-t border-slate-50 text-[10px] text-slate-400 font-semibold leading-relaxed">
+                Data profil desa akan digunakan pada kop surat resmi dalam administrasi modul Persuratan dan judul cetak laporan keuangan LPJ.
               </div>
             </div>
-
-            <div className="pt-6 mt-6 border-t border-slate-50 text-[10px] text-slate-400 font-semibold leading-relaxed">
-              Data profil desa akan digunakan pada kop surat resmi dalam administrasi modul Persuratan dan judul cetak laporan keuangan LPJ.
-            </div>
           </div>
+        </div>
 
           {/* Right Column: SHU Allocations */}
           <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-3xl shadow-sm space-y-6">
@@ -547,35 +611,167 @@ export default function PengaturanPage() {
               </div>
             </div>
 
-            {/* Form Actions */}
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={fetchSettings}
-                disabled={saving}
-                className="flex-1 py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold border border-slate-200 hover:border-slate-350 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 active:scale-98"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${saving ? "animate-spin" : ""}`} />
-                Reset
-              </button>
-              <button
-                type="submit"
-                disabled={saving || !isShuBalanced}
-                className="flex-[2] py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 disabled:shadow-none text-white font-bold rounded-2xl text-xs shadow-md shadow-emerald-600/10 transition-all flex items-center justify-center gap-1.5 active:scale-98"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Menyimpan...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5" />
-                    Simpan Pengaturan
-                  </>
-                )}
-              </button>
             </div>
+
+          {/* Third Card (Spanning 2 columns): Signatures Settings */}
+          <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-3xl shadow-sm md:col-span-2 space-y-6">
+            <div>
+              <h2 className="text-slate-800 font-bold text-sm tracking-tight border-b border-slate-50 pb-3 flex items-center gap-2">
+                <Users className="w-4 h-4 text-emerald-600" />
+                Pejabat Penandatangan Dokumen (LPJ & Laporan Keuangan)
+              </h2>
+              <p className="text-slate-400 text-xs font-semibold mt-1">
+                Atur nama lengkap dan NIK/NIP pejabat desa dan BUMDES yang akan dicetak di Lembar Pengesahan LPJ.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Kepala Desa / Penasihat */}
+              <div className="space-y-3 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">Penasihat (Kepala Desa)</h3>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Nama Lengkap</label>
+                    <input
+                      type="text"
+                      name="leader_name"
+                      value={formData.leader_name}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: Budi Santoso, S.Sos."
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-xs font-semibold text-slate-850 placeholder:text-slate-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">NIK / NIP</label>
+                    <input
+                      type="text"
+                      name="leader_nip"
+                      value={formData.leader_nip}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: 19800812 201001 1 003"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-xs font-semibold text-slate-850 placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Direktur BUMDES */}
+              <div className="space-y-3 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">Direktur / Ketua BUMDes</h3>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Nama Lengkap</label>
+                    <input
+                      type="text"
+                      name="director_name"
+                      value={formData.director_name}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: Ahmad Fauzi, M.Ak."
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-xs font-semibold text-slate-850 placeholder:text-slate-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">NIK / NIP</label>
+                    <input
+                      type="text"
+                      name="director_nip"
+                      value={formData.director_nip}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: 3517123456780001"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-xs font-semibold text-slate-850 placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bendahara Keuangan */}
+              <div className="space-y-3 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">Bendahara Keuangan</h3>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Nama Lengkap</label>
+                    <input
+                      type="text"
+                      name="treasurer_name"
+                      value={formData.treasurer_name}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: Siti Rahmawati, S.E."
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-xs font-semibold text-slate-850 placeholder:text-slate-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">NIK / NIP</label>
+                    <input
+                      type="text"
+                      name="treasurer_nip"
+                      value={formData.treasurer_nip}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: 3517098765430002"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-xs font-semibold text-slate-850 placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Ketua Badan Pengawas */}
+              <div className="space-y-3 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">Ketua Badan Pengawas</h3>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Nama Lengkap</label>
+                    <input
+                      type="text"
+                      name="supervisor_name"
+                      value={formData.supervisor_name}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: Drs. Joko Wahyono"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-xs font-semibold text-slate-850 placeholder:text-slate-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">NIK / NIP</label>
+                    <input
+                      type="text"
+                      name="supervisor_nip"
+                      value={formData.supervisor_nip}
+                      onChange={handleInputChange}
+                      placeholder="Contoh: 3517112233440003"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 focus:border-emerald-500 rounded-xl text-xs font-semibold text-slate-850 placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Actions */}
+          <div className="md:col-span-2 flex items-center justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={fetchSettings}
+              disabled={saving}
+              className="px-6 py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold border border-slate-200 hover:border-slate-350 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 active:scale-98"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${saving ? "animate-spin" : ""}`} />
+              Reset
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !isShuBalanced}
+              className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 disabled:shadow-none text-white font-bold rounded-2xl text-xs shadow-md shadow-emerald-600/10 transition-all flex items-center justify-center gap-1.5 active:scale-98"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Menyimpan...
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  Simpan Pengaturan
+                </>
+              )}
+            </button>
           </div>
         </form>
       )}

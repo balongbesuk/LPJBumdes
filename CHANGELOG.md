@@ -2,7 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-06-12
+
+### Added
+- **Mode Simulasi Data (Demo Seeding)**:
+  - Ditambahkan skrip `scripts/seed-demo.ts` dan perintah `npm run db:seed-demo` untuk mereset dan mempopulasikan database dengan data tiruan yang lengkap (transaksi simpan pinjam, kredit aktif, booking gedung, sewa lahan/lapak, komisi PPOB, log surat, inventaris aset, dan jurnal umum penyeimbang ganda) demi kemudahan demonstrasi fungsionalitas sistem.
+- **Fleksibilitas Modul Unit Usaha**:
+  - Ditambahkan pengaturan aktifasi modul unit usaha (Simpan Pinjam, Sewa GSG, Sewa Lahan, Rekap PPOB, dan Persuratan) secara visual berupa checklist di halaman Pengaturan Sistem.
+  - Sidebar navigasi kini merender menu navigasi secara dinamis menyesuaikan modul yang diaktifkan oleh administrator.
+- **Kustomisasi Pejabat Penandatangan LPJ**:
+  - Ditambahkan konfigurasi nama lengkap dan NIK/NIP Kepala Desa, Direktur BUMDES, Ketua Pengawas, dan Bendahara di halaman Pengaturan Sistem.
+  - Lembar Pengesahan LPJ Tahunan kini mencetak nama dan NIK/NIP pejabat secara dinamis dan rapi pada dokumen cetak PDF.
+
+### Fixed
+- **Validasi Saldo Awal Neraca di Setup Wizard**:
+  - Ditambahkan validasi persamaan akuntansi ($Aktiva = Pasiva$) di langkah penginputan saldo awal neraca untuk mencegah saldo tidak seimbang sejak instalasi pertama.
+  - Ditambahkan kotak kalkulasi visual real-time yang menghitung selisih antara Aktiva dan Pasiva.
+
 ## [1.6.1] - 2026-06-11
+
 
 ### Fixed
 - **Tampilan Cetak Laporan Pertanggungjawaban (LPJ) Tahunan**:

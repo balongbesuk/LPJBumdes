@@ -85,10 +85,18 @@ npx prisma migrate dev --name init
 ```
 
 ### Langkah 4: Isi Data Bawaan (Seeding)
-Proyek ini dilengkapi dengan skrip data bawaan awal (akun default, bagan perkiraan, saldo awal tahun anggaran, dan data transaksi simulasi lengkap). Jalankan perintah berikut untuk mengisinya:
-```bash
-npx prisma db seed
-```
+Anda memiliki dua opsi pengisian data awal database:
+
+* **Opsi A: Database Bersih & Generik (Siap Produksi)**
+  Hanya mengisi bagan akun (Chart of Accounts) standar dan user default, lalu mengarahkan ke Setup Wizard saat login pertama:
+  ```bash
+  npx prisma db seed
+  ```
+* **Opsi B: Database Simulasi (Mode Demo)**
+  Mengisi database dengan data tiruan lengkap (anggota SP, pinjaman aktif, angsuran berjalan, sewa gedung, kontrak lapak PKL, data log surat, dan jurnal transaksi pembukuan seimbang) untuk uji coba fitur sistem secara instan:
+  ```bash
+  npm run db:seed-demo
+  ```
 
 ### Langkah 5: Jalankan Mode Pengembangan
 ```bash

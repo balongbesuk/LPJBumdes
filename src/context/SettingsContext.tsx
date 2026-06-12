@@ -12,6 +12,19 @@ export interface BumdesSettings {
   shu_sosial_pct: string
   shu_modal_pct: string
   shu_desa_pct: string
+  module_sp?: string
+  module_gedung?: string
+  module_lahan?: string
+  module_ppob?: string
+  module_persuratan?: string
+  leader_name?: string
+  leader_nip?: string
+  director_name?: string
+  director_nip?: string
+  treasurer_name?: string
+  treasurer_nip?: string
+  supervisor_name?: string
+  supervisor_nip?: string
 }
 
 const defaultSettings: BumdesSettings = {
@@ -24,6 +37,19 @@ const defaultSettings: BumdesSettings = {
   shu_sosial_pct: "0",
   shu_modal_pct: "0",
   shu_desa_pct: "0",
+  module_sp: "true",
+  module_gedung: "true",
+  module_lahan: "true",
+  module_ppob: "true",
+  module_persuratan: "true",
+  leader_name: "",
+  leader_nip: "",
+  director_name: "",
+  director_nip: "",
+  treasurer_name: "",
+  treasurer_nip: "",
+  supervisor_name: "",
+  supervisor_nip: ""
 }
 
 // Simple in-memory cache to prevent duplicate fetches across components

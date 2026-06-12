@@ -328,22 +328,25 @@ export default function LpjTab({ report, settings }: LpjTabProps) {
 
             {/* Signature Block */}
             <div className="grid grid-cols-3 gap-4 text-center mt-12 text-[10px] leading-relaxed">
-              <div className="space-y-16">
+              <div className="space-y-12">
                 <p>Menyetujui,<br /><b>Ketua Badan Pengawas</b></p>
                 <div className="pt-2 border-t border-slate-350 w-36 mx-auto">
-                  <p className="font-bold">BADAN PENGAWAS</p>
+                  <p className="font-bold uppercase">{settings?.supervisor_name || "BADAN PENGAWAS"}</p>
+                  {settings?.supervisor_nip && <p className="text-[8px] text-slate-500 font-mono mt-0.5">NIP/NIK. {settings.supervisor_nip}</p>}
                 </div>
               </div>
-              <div className="space-y-16">
+              <div className="space-y-12">
                 <p>Mengetahui/Mengesahkan,<br /><b>Penasihat (Kepala Desa)</b></p>
                 <div className="pt-2 border-t border-slate-350 w-36 mx-auto">
-                  <p className="font-bold">{settings?.village_name ? `Kades ${settings.village_name}` : "KEPALA DESA"}</p>
+                  <p className="font-bold uppercase">{settings?.leader_name || (settings?.village_name ? `Kades ${settings.village_name}` : "KEPALA DESA")}</p>
+                  {settings?.leader_nip && <p className="text-[8px] text-slate-500 font-mono mt-0.5">NIP/NIK. {settings.leader_nip}</p>}
                 </div>
               </div>
-              <div className="space-y-16">
+              <div className="space-y-12">
                 <p>{settings?.village_name || "Desa"}, 31 Desember {selectedYear}<br /><b>Direktur/Kepala BUM Desa</b></p>
                 <div className="pt-2 border-t border-slate-350 w-36 mx-auto">
-                  <p className="font-bold">PELAKSANA OPERASIONAL</p>
+                  <p className="font-bold uppercase">{settings?.director_name || "PELAKSANA OPERASIONAL"}</p>
+                  {settings?.director_nip && <p className="text-[8px] text-slate-500 font-mono mt-0.5">NIP/NIK. {settings.director_nip}</p>}
                 </div>
               </div>
             </div>

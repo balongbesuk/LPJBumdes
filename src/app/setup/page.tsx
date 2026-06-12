@@ -95,6 +95,23 @@ export default function SetupPage() {
     (parseFloat(shuDesa) || 0)
   const isShuBalanced = Math.abs(totalShu - 100) < 0.01
 
+  const totalAktiva =
+    (parseFloat(ob.kas_bumdes) || 0) +
+    (parseFloat(ob.kas_gedung) || 0) +
+    (parseFloat(ob.kas_lapak) || 0) +
+    (parseFloat(ob.piutang_masyarakat) || 0) +
+    (parseFloat(ob.piutang_gapoktan) || 0) +
+    (parseFloat(ob.peralatan) || 0)
+
+  const totalPasiva =
+    (parseFloat(ob.akum_penyusutan) || 0) +
+    (parseFloat(ob.simpanan_pokok) || 0) +
+    (parseFloat(ob.simpanan_wajib) || 0) +
+    (parseFloat(ob.hutang_shu) || 0) +
+    (parseFloat(ob.modal_desa) || 0)
+
+  const isObBalanced = Math.abs(totalAktiva - totalPasiva) < 0.1
+
   const handleObChange = (key: string, value: string) => {
     setOb((prev) => ({ ...prev, [key]: value }))
   }
@@ -125,6 +142,13 @@ export default function SetupPage() {
 
   const handleSubmit = async () => {
     setError(null)
+    
+    // Validate balance if any opening balance is entered
+    if ((totalAktiva > 0 || totalPasiva > 0) && !isObBalanced) {
+      setError(`Jumlah Aktiva (Rp ${totalAktiva.toLocaleString("id-ID")}) dan Pasiva (Rp ${totalPasiva.toLocaleString("id-ID")}) tidak seimbang! Selisih: Rp ${Math.abs(totalAktiva - totalPasiva).toLocaleString("id-ID")}`)
+      return
+    }
+
     setSaving(true)
     try {
       // Build opening balances object (only non-empty values)
@@ -451,6 +475,33 @@ export default function SetupPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Balance Summary Box */}
+                {(totalAktiva > 0 || totalPasiva > 0) && (
+                  <div className={`p-4 border rounded-2xl flex flex-col gap-2 text-xs transition-all ${
+                    isObBalanced
+                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                      : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                  }`}>
+                    <div className="flex items-center justify-between font-bold">
+                      <div className="flex items-center gap-1.5">
+                        {isObBalanced ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4" />
+                        )}
+                        <span>{isObBalanced ? "Saldo Seimbang" : "Saldo Belum Seimbang"}</span>
+                      </div>
+                      {!isObBalanced && (
+                        <span>Selisih: Rp {Math.abs(totalAktiva - totalPasiva).toLocaleString("id-ID")}</span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-[10px] font-semibold text-slate-300 border-t border-white/5 pt-2">
+                      <div>Total Aktiva: <span className="text-white font-bold block text-xs">Rp {totalAktiva.toLocaleString("id-ID")}</span></div>
+                      <div>Total Pasiva: <span className="text-white font-bold block text-xs">Rp {totalPasiva.toLocaleString("id-ID")}</span></div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-[10px] text-slate-400 font-semibold leading-relaxed">
                   💡 Jika BUMDES baru berdiri dan belum memiliki saldo awal, Anda dapat melewati langkah ini. Saldo awal juga bisa diinput nanti melalui menu Jurnal Umum di dashboard.

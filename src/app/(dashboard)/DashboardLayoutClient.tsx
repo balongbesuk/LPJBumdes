@@ -123,7 +123,16 @@ export default function DashboardLayoutClient({
     router.push("/login")
   }
 
-  const navItems = allNavItems.filter((item) => item.roles.includes(user.role))
+  const navItems = allNavItems
+    .filter((item) => item.roles.includes(user.role))
+    .filter((item) => {
+      if (item.name === "Simpan Pinjam") return initialSettings?.module_sp !== "false"
+      if (item.name === "Sewa Gedung") return initialSettings?.module_gedung !== "false"
+      if (item.name === "Sewa Lahan") return initialSettings?.module_lahan !== "false"
+      if (item.name === "PPOB Rekap") return initialSettings?.module_ppob !== "false"
+      if (item.name === "Persuratan") return initialSettings?.module_persuratan !== "false"
+      return true
+    })
 
   const getRoleLabel = (role: string) => {
     switch (role) {
