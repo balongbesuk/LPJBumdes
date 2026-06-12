@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## [1.9.0] - 2026-06-12
 
 ### Added
+- **Perombakan Premium Halaman Publik Utama (Homepage)**:
+  - Mengubah tampilan total halaman beranda (`/`) menjadi modern, clean, dan mobile-first dengan mesh gradient glow, glassmorphism callout widgets, kartu stat melayang berpendar, dan transisi hover yang dinamis.
 - **Type Safety & Validasi Payload (Zod)**:
   - Terintegrasi pustaka `zod` untuk validasi server-side pada input transaksi Buku Kas Umum (BKU) dan penambahan Aset Tetap baru.
   - Pengecekan mencakup validasi tipe data, nominal positif, dan penyeimbangan total nominal Debit dengan Kredit.
