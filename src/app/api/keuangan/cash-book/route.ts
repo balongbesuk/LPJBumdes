@@ -1,21 +1,9 @@
+import { getUserSession } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { postJournalEntry } from "@/lib/ledger"
 import { isPeriodLocked } from "@/lib/period-lock"
 import { logActivity } from "@/lib/audit"
-import { cookies } from "next/headers"
-
-async function getUserSession() {
-  const cookieStore = await cookies()
-  const userCookie = cookieStore.get("bumdes_user")
-  if (!userCookie) return null
-  try {
-    return JSON.parse(userCookie.value)
-  } catch (_) {
-    return null
-  }
-}
-
 // GET: Fetch all journal entries with their lines for Buku Kas Umum
 export async function GET() {
   try {
@@ -39,7 +27,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { date, description, unitUsaha, lines } = body
+    const { date, description, unitUsaha, lines, attachmentUrl } = body
 
     const txDate = date ? new Date(date) : new Date()
 
@@ -58,7 +46,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = await postJournalEntry(txDate, description, unitUsaha, lines)
+    const result = await postJournalEntry(txDate, description, unitUsaha, lines, attachmentUrl)
 
     // Log to audit log
     const session = await getUserSession()

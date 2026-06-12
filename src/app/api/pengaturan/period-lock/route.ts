@@ -1,18 +1,7 @@
+import { getUserSession } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { cookies } from "next/headers"
 import { logActivity } from "@/lib/audit"
-
-async function getUserSession() {
-  const cookieStore = await cookies()
-  const userCookie = cookieStore.get("bumdes_user")
-  if (!userCookie) return null
-  try {
-    return JSON.parse(userCookie.value)
-  } catch (_) {
-    return null
-  }
-}
 
 // GET: Fetch all locked periods
 export async function GET() {

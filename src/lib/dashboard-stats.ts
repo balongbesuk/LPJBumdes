@@ -39,8 +39,9 @@ export async function getDashboardStats(): Promise<DashboardStatsData> {
       })
     })(),
 
-    // 4. Fetch ALL journal lines in ONE query
-    db.journalLine.findMany({
+    // 4. Fetch aggregated journal lines in ONE query
+    db.journalLine.groupBy({
+      by: ["accountCode", "type"],
       where: {
         accountCode: {
           in: [
@@ -51,9 +52,7 @@ export async function getDashboardStats(): Promise<DashboardStatsData> {
           ],
         },
       },
-      select: {
-        accountCode: true,
-        type: true,
+      _sum: {
         amount: true,
       },
     }),
@@ -76,14 +75,16 @@ export async function getDashboardStats(): Promise<DashboardStatsData> {
 
   // Build a lookup map: accountCode -> { debitSum, creditSum }
   const balanceMap: Record<string, { debit: number; credit: number }> = {}
-  for (const line of allJournalLines) {
-    if (!balanceMap[line.accountCode]) {
-      balanceMap[line.accountCode] = { debit: 0, credit: 0 }
+  for (const item of allJournalLines) {
+    const code = item.accountCode
+    const amount = item._sum.amount || 0
+    if (!balanceMap[code]) {
+      balanceMap[code] = { debit: 0, credit: 0 }
     }
-    if (line.type === "DEBIT") {
-      balanceMap[line.accountCode].debit += line.amount
+    if (item.type === "DEBIT") {
+      balanceMap[code].debit += amount
     } else {
-      balanceMap[line.accountCode].credit += line.amount
+      balanceMap[code].credit += amount
     }
   }
 

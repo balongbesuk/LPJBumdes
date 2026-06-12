@@ -1,20 +1,8 @@
+import { getUserSession } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { isPeriodLocked } from "@/lib/period-lock"
 import { logActivity } from "@/lib/audit"
-import { cookies } from "next/headers"
-
-async function getUserSession() {
-  const cookieStore = await cookies()
-  const userCookie = cookieStore.get("bumdes_user")
-  if (!userCookie) return null
-  try {
-    return JSON.parse(userCookie.value)
-  } catch (_) {
-    return null
-  }
-}
-
 // Default templates for BUMDes LPJ narrative chapters (based on Permendesa No. 3/2021)
 const DEFAULT_TEMPLATES = {
   bab1: "BUM Desa telah berhasil menjalankan berbagai program usaha selama tahun buku ini. Terjadi peningkatan efisiensi operasional dan pertumbuhan basis nasabah simpan pinjam serta perluasan penyewaan fasilitas gsg dan lapak warung.",

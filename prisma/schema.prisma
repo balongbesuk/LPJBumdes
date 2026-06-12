@@ -137,11 +137,12 @@ model LedgerAccount {
 }
 
 model JournalEntry {
-  id          String        @id @default(uuid())
-  date        DateTime      @default(now())
-  description String
-  unitUsaha   String        // SP, GEDUNG, LAHAN, PPOB, UMUM
-  lines       JournalLine[]
+  id            String        @id @default(uuid())
+  date          DateTime      @default(now())
+  description   String
+  unitUsaha     String        // SP, GEDUNG, LAHAN, PPOB, UMUM
+  attachmentUrl String?
+  lines         JournalLine[]
 
   @@index([unitUsaha])
   @@index([date])

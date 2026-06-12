@@ -1,8 +1,10 @@
 import { db } from "./db"
 
 export async function getAccountBalance(accountCode: string): Promise<number> {
-  const lines = await db.journalLine.findMany({
-    where: { accountCode }
+  const sums = await db.journalLine.groupBy({
+    by: ['type'],
+    where: { accountCode },
+    _sum: { amount: true }
   })
 
   const account = await db.ledgerAccount.findUnique({
@@ -11,15 +13,8 @@ export async function getAccountBalance(accountCode: string): Promise<number> {
 
   if (!account) return 0
 
-  let debitSum = 0
-  let creditSum = 0
-  for (const line of lines) {
-    if (line.type === "DEBIT") {
-      debitSum += line.amount
-    } else if (line.type === "CREDIT") {
-      creditSum += line.amount
-    }
-  }
+  const debitSum = sums.find(s => s.type === "DEBIT")?._sum.amount || 0
+  const creditSum = sums.find(s => s.type === "CREDIT")?._sum.amount || 0
 
   if (account.type === "ASSET" || account.type === "EXPENSE") {
     return debitSum - creditSum
@@ -32,7 +27,8 @@ export async function postJournalEntry(
   date: Date,
   description: string,
   unitUsaha: "SP" | "GEDUNG" | "LAHAN" | "PPOB" | "UMUM",
-  lines: { accountCode: string; type: "DEBIT" | "CREDIT"; amount: number }[]
+  lines: { accountCode: string; type: "DEBIT" | "CREDIT"; amount: number }[],
+  attachmentUrl?: string | null
 ) {
   // Verify double entry balancing: sum of debits must equal sum of credits
   let debitTotal = 0
@@ -56,7 +52,8 @@ export async function postJournalEntry(
       data: {
         date,
         description,
-        unitUsaha
+        unitUsaha,
+        attachmentUrl: attachmentUrl || null
       }
     })
 

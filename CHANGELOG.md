@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [1.8.0] - 2026-06-12
 
 ### Added
+- **Otomatisasi Penyusutan Aset Tetap**:
+  - Mengintegrasikan kalkulasi penyusutan (depresiasi) aset tetap secara otomatis saat menjalankan proses Tutup Buku Tahunan (`/api/keuangan/closing`).
+  - Sistem akan secara otomatis menghitung nilai penyusutan tahunan dengan metode garis lurus dari aset yang masih memiliki sisa nilai, menambahkan nilai ke akumulasi penyusutan aset terkait, dan memposting Jurnal Penyusutan secara otomatis ke sistem buku besar.
+- **Lampiran Bukti Transaksi BKU**:
+  - Menambahkan field opsional `attachmentUrl` di skema `JournalEntry`.
+  - Mengimplementasikan endpoint `/api/upload` untuk unggah dokumen (PDF/JPG/PNG).
+  - Menambahkan fungsionalitas unggah berkas bukti fisik (kuitansi/nota belanja) di form Catat Pengeluaran & Penerimaan BKU, disertai dengan tautan "📎 Lihat Lampiran" pada histori transaksi.
 - **Perombakan total tampilan halaman login**: Implemented premium full-frame split-screen layout with modern design, responsive, and dynamic branding.
 
 ## [1.7.0] - 2026-06-12

@@ -64,21 +64,8 @@ export async function middleware(request: NextRequest) {
   // 2. Retrieve JWT token from cookie
   const token = request.cookies.get(AUTH_COOKIE_NAME)
 
-  // 3. If no token exists, try legacy cookie for backward compatibility
+  // 3. If no token exists, redirect to login or return unauthorized
   if (!token) {
-    // Check legacy bumdes_user cookie as fallback
-    const legacyCookie = request.cookies.get("bumdes_user")
-    if (legacyCookie) {
-      try {
-        const user = JSON.parse(legacyCookie.value)
-        // Legacy session still valid — check role-based access
-        return checkRoleAccess(pathname, user.role, request)
-      } catch {
-        // Corrupted legacy cookie
-      }
-    }
-
-    // No valid session at all
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         { success: false, error: "Sesi Anda telah berakhir. Silakan masuk kembali." },

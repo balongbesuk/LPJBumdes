@@ -1,4 +1,6 @@
 import bcrypt from "bcryptjs"
+import { cookies } from "next/headers"
+import { verifyToken, AUTH_COOKIE_NAME } from "./jwt"
 
 const SALT_ROUNDS = 12
 
@@ -18,4 +20,27 @@ export async function comparePassword(
   storedHash: string
 ): Promise<boolean> {
   return bcrypt.compare(plaintext, storedHash)
+}
+
+/**
+ * Retrieve current user session securely from HttpOnly JWT cookie.
+ */
+export async function getUserSession() {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get(AUTH_COOKIE_NAME)
+    if (!token) return null
+
+    const payload = await verifyToken(token.value)
+    if (!payload) return null
+
+    return {
+      id: payload.sub,
+      username: payload.username,
+      name: payload.name,
+      role: payload.role
+    }
+  } catch (_) {
+    return null
+  }
 }

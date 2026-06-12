@@ -1,20 +1,8 @@
+import { getUserSession } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { isPeriodLocked } from "@/lib/period-lock"
 import { logActivity } from "@/lib/audit"
-import { cookies } from "next/headers"
-
-async function getUserSession() {
-  const cookieStore = await cookies()
-  const userCookie = cookieStore.get("bumdes_user")
-  if (!userCookie) return null
-  try {
-    return JSON.parse(userCookie.value)
-  } catch (_) {
-    return null
-  }
-}
-
 // Ensure CKPN accounts exist in the LedgerAccount table
 async function ensureCkpnAccounts() {
   await db.ledgerAccount.upsert({

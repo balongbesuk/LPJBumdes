@@ -22,6 +22,8 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
   const [bkuTargetAccount, setBkuTargetAccount] = useState("5-1100") // Biaya Operasional / Modal Awal
   const [bkuAmount, setBkuAmount] = useState("")
   const [bkuDate, setBkuDate] = useState("")
+  const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   const [formSubmitLoading, setFormSubmitLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -40,6 +42,31 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
     }
   }
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setFormError(null)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      })
+      const result = await res.json()
+      if (result.success) {
+        setAttachmentUrl(result.url)
+      } else {
+        throw new Error(result.error || "Gagal mengunggah file")
+      }
+    } catch (err: any) {
+      setFormError(err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   useEffect(() => {
     fetchBku()
   }, [])
@@ -53,6 +80,7 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
     setBkuUnit("UMUM")
     setBkuCashAccount("1-1100")
     setBkuTargetAccount(mode === "EXPENSE" ? "5-1100" : "3-1100")
+    setAttachmentUrl(null)
     setShowAddBkuModal(true)
   }
 
@@ -85,7 +113,8 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
           date: bkuDate || undefined,
           description: bkuDesc,
           unitUsaha: bkuUnit,
-          lines
+          lines,
+          attachmentUrl
         })
       })
       const result = await res.json()
@@ -174,7 +203,19 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
                               </span>
                             </td>
                             <td className="px-6 py-4 font-medium text-slate-800" rowSpan={entry.lines.length}>
-                              {entry.description}
+                              <div className="flex flex-col gap-1">
+                                <span>{entry.description}</span>
+                                {entry.attachmentUrl && (
+                                  <a
+                                    href={entry.attachmentUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] text-emerald-600 hover:text-emerald-700 font-bold hover:underline flex items-center gap-1 w-fit mt-1 no-print"
+                                  >
+                                    📎 Lihat Lampiran
+                                  </a>
+                                )}
+                              </div>
                             </td>
                           </>
                         ) : null}
@@ -353,6 +394,38 @@ export default function BkuTab({ onRefreshReport }: BkuTabProps) {
                       </select>
                     </div>
                   </>
+                )}
+              </div>
+
+              <div className="space-y-1 pt-2 border-t border-slate-100">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Lampiran Bukti (PDF/JPG/PNG - Opsional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileChange}
+                    className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer cursor-pointer focus:outline-none"
+                  />
+                </div>
+                {uploading && (
+                  <p className="text-[10px] text-blue-600 font-semibold animate-pulse mt-1">
+                    Mengunggah lampiran...
+                  </p>
+                )}
+                {!uploading && attachmentUrl && (
+                  <div className="flex items-center gap-1.5 mt-1 text-[10px] text-emerald-600 font-semibold">
+                    <span>✓ Terlampir:</span>
+                    <a
+                      href={attachmentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline font-bold hover:text-emerald-700 text-emerald-600"
+                    >
+                      Lihat Dokumen
+                    </a>
+                  </div>
                 )}
               </div>
 

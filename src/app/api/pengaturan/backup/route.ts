@@ -1,19 +1,8 @@
+import { getUserSession } from "@/lib/auth"
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import fs from "fs"
 import path from "path"
 import { logActivity } from "@/lib/audit"
-
-async function getUserSession() {
-  const cookieStore = await cookies()
-  const userCookie = cookieStore.get("bumdes_user")
-  if (!userCookie) return null
-  try {
-    return JSON.parse(userCookie.value)
-  } catch (_) {
-    return null
-  }
-}
 
 export async function GET() {
   try {

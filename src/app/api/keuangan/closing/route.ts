@@ -1,21 +1,9 @@
+import { getUserSession } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getAccountBalance } from "@/lib/ledger"
 import { isPeriodLocked } from "@/lib/period-lock"
 import { logActivity } from "@/lib/audit"
-import { cookies } from "next/headers"
-
-async function getUserSession() {
-  const cookieStore = await cookies()
-  const userCookie = cookieStore.get("bumdes_user")
-  if (!userCookie) return null
-  try {
-    return JSON.parse(userCookie.value)
-  } catch (_) {
-    return null
-  }
-}
-
 // POST: Execute year-end closing entries and lock December period
 export async function POST(request: Request) {
   try {
@@ -78,6 +66,83 @@ export async function POST(request: Request) {
         },
         { status: 400 }
       )
+    }
+
+    // Check if Jurnal Penyusutan has already been run for this year
+    const existingDepreciation = await db.journalEntry.findFirst({
+      where: {
+        description: {
+          contains: `Pencatatan Depresiasi/Penyusutan Aset Tetap BUMDES Tahun ${parsedYear}`
+        }
+      }
+    })
+
+    if (!existingDepreciation) {
+      // Fetch all assets that are not fully depreciated
+      const assets = await db.fixedAsset.findMany()
+      const activeAssets = assets.filter(a => a.accumDep < a.purchaseCost)
+
+      if (activeAssets.length > 0) {
+        const depDate = new Date(`${parsedYear}-12-31T23:59:58Z`)
+        
+        await db.$transaction(async (tx) => {
+          let totalDeprecAmount = 0
+          const updatedAssetIds: string[] = []
+
+          for (const asset of activeAssets) {
+            // Annual depreciation amount
+            const annualDep = asset.purchaseCost * (asset.depreciationRate / 100)
+            // Ensure accumDep doesn't exceed purchaseCost
+            const maxAllowedDep = asset.purchaseCost - asset.accumDep
+            const deprecAmount = Math.min(annualDep, maxAllowedDep)
+
+            if (deprecAmount > 0) {
+              totalDeprecAmount += deprecAmount
+              await tx.fixedAsset.update({
+                where: { id: asset.id },
+                data: {
+                  accumDep: asset.accumDep + deprecAmount
+                }
+              })
+              updatedAssetIds.push(asset.id)
+            }
+          }
+
+          if (totalDeprecAmount > 0) {
+            // Post Jurnal Penyusutan
+            const journal = await tx.journalEntry.create({
+              data: {
+                date: depDate,
+                description: `Pencatatan Depresiasi/Penyusutan Aset Tetap BUMDES Tahun ${parsedYear} (Otomatis saat Tutup Buku)`,
+                unitUsaha: "UMUM"
+              }
+            })
+
+            // Debit: Biaya Penyusutan Aktiva Tetap (5-1400)
+            // Credit: Akumulasi Penyusutan Peralatan (1-2200)
+            await tx.journalLine.createMany({
+              data: [
+                {
+                  journalEntryId: journal.id,
+                  accountCode: "5-1400", // Biaya Penyusutan Aktiva Tetap
+                  type: "DEBIT",
+                  amount: totalDeprecAmount
+                },
+                {
+                  journalEntryId: journal.id,
+                  accountCode: "1-2200", // Akumulasi Penyusutan Peralatan
+                  type: "CREDIT",
+                  amount: totalDeprecAmount
+                }
+              ]
+            })
+
+            // Log activity
+            const actDetail = `Menjalankan penyusutan aset tetap tahun ${parsedYear} secara otomatis senilai Rp ${totalDeprecAmount.toLocaleString("id-ID")} untuk ${updatedAssetIds.length} barang saat Tutup Buku`
+            await logActivity("DEPRECIATE_ASSETS", actDetail, session)
+          }
+        })
+      }
     }
 
     // Fetch all LedgerAccounts
