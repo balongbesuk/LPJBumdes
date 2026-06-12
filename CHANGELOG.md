@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2026-06-12
+
+### Added
+- **Perombakan total tampilan halaman login**: Implemented premium full-frame split-screen layout with modern design, responsive, and dynamic branding.
+
 ## [1.7.0] - 2026-06-12
 
 ### Added
@@ -13,6 +18,8 @@ All notable changes to this project will be documented in this file.
 - **Kustomisasi Pejabat Penandatangan LPJ**:
   - Ditambahkan konfigurasi nama lengkap dan NIK/NIP Kepala Desa, Direktur BUMDES, Ketua Pengawas, dan Bendahara di halaman Pengaturan Sistem.
   - Lembar Pengesahan LPJ Tahunan kini mencetak nama dan NIK/NIP pejabat secara dinamis dan rapi pada dokumen cetak PDF.
+- **Perombakan Layout Halaman Login (Full-Frame Split Layout)**:
+  - Halaman login dirombak menjadi full-frame split layout yang modern, mobile-first, dan premium: Sisi kiri memuat formulir pembukuan dengan latar belakang gelap terpadu dan pendaran cahaya emerald, sisi kanan memuat data regional, tagline, dan sorotan unit usaha. area terpisah ditiadakan untuk hasil tampilan mobile yang utuh (full viewport).
 
 ### Fixed
 - **Validasi Saldo Awal Neraca di Setup Wizard**:
