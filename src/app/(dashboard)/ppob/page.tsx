@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { formatRupiah } from "@/lib/utils"
 import { useSettings } from "@/context/SettingsContext"
+import PpobSettingsTab from "./PpobSettingsTab"
 
 interface PpobRecord {
   id: string
@@ -26,6 +27,7 @@ interface PpobRecord {
 export default function PpobPage() {
   const settings = useSettings()
   const [rekaps, setRekaps] = useState<PpobRecord[]>([])
+  const [activeTab, setActiveTab] = useState<"rekap" | "pengaturan">("rekap")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -175,93 +177,123 @@ export default function PpobPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-4 py-2.5 rounded-2xl text-xs shadow-sm transition-all active:scale-95 shrink-0 w-fit"
-              >
-                <Printer className="w-4 h-4 text-emerald-600" />
-                Cetak Laporan
-              </button>
-              <button
-                onClick={() => {
-                  setTotalRevenue("")
-                  setTotalCommission("")
-                  setDescription("")
-                  setDateStr("")
-                  setFormError(null)
-                  setFormSuccess(null)
-                  setActiveModal(true)
-                }}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-2xl text-xs shadow-md shadow-emerald-600/10 transition-all active:scale-95 shrink-0 w-fit"
-              >
-                <Plus className="w-4 h-4" />
-                Rekap Baru
-              </button>
+              {activeTab === "rekap" && (
+                <>
+                  <button
+                    onClick={handlePrint}
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-4 py-2.5 rounded-2xl text-xs shadow-sm transition-all active:scale-95 shrink-0 w-fit"
+                  >
+                    <Printer className="w-4 h-4 text-emerald-600" />
+                    Cetak Laporan
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTotalRevenue("")
+                      setTotalCommission("")
+                      setDescription("")
+                      setDateStr("")
+                      setFormError(null)
+                      setFormSuccess(null)
+                      setActiveModal(true)
+                    }}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-2xl text-xs shadow-md shadow-emerald-600/10 transition-all active:scale-95 shrink-0 w-fit"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Rekap Baru
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
-      {/* Metrics Panel */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm flex flex-col justify-between">
-          <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Total Pendapatan Bersih PPOB</span>
-          <div className="mt-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800 tracking-tight leading-none">
-              {formatRupiah(totalCommissionAllTime)}
-            </h2>
-            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl w-fit border border-slate-200/50">
+            <button
+              onClick={() => setActiveTab("rekap")}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "rekap" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Rekap Komisi
+            </button>
+            <button
+              onClick={() => setActiveTab("pengaturan")}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "pengaturan" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Pengaturan
+            </button>
+          </div>
+
+      {activeTab === "pengaturan" ? (
+        <PpobSettingsTab />
+      ) : (
+        <>
+          {/* Metrics Panel */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm flex flex-col justify-between">
+              <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Total Pendapatan Bersih PPOB</span>
+              <div className="mt-4 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-slate-800 tracking-tight leading-none">
+                  {formatRupiah(totalCommissionAllTime)}
+                </h2>
+                <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+              <span className="text-[10px] text-slate-400 font-semibold mt-2 block">
+                Akumulasi pendapatan komisi yang dibukukan
+              </span>
             </div>
           </div>
-          <span className="text-[10px] text-slate-400 font-semibold mt-2 block">
-            Akumulasi pendapatan komisi yang dibukukan
-          </span>
-        </div>
-      </div>
 
-      {/* Table list */}
-      <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tanggal</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Keterangan</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Total Volume Omset</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Laba Komisi BUMDES</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 text-slate-700 text-xs font-medium">
-              {rekaps.length > 0 ? (
-                rekaps.map((rekap) => {
-                  const date = new Date(rekap.date).toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
-                  })
-                  return (
-                    <tr key={rekap.id} className="hover:bg-slate-50/50 transition-all">
-                      <td className="px-6 py-4 text-slate-500 font-semibold">{date}</td>
-                      <td className="px-6 py-4 text-slate-800 font-bold">{rekap.description || "Rekap PPOB"}</td>
-                      <td className="px-6 py-4 text-right text-slate-600 font-semibold">
-                        {formatRupiah(rekap.totalRevenue)}
-                      </td>
-                      <td className="px-6 py-4 text-right text-purple-700 font-bold">
-                        {formatRupiah(rekap.totalCommission)}
+          {/* Table list */}
+          <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tanggal</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Keterangan</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Total Volume Omset</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Laba Komisi BUMDES</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 text-slate-700 text-xs font-medium">
+                  {rekaps.length > 0 ? (
+                    rekaps.map((rekap) => {
+                      const date = new Date(rekap.date).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric"
+                      })
+                      return (
+                        <tr key={rekap.id} className="hover:bg-slate-50/50 transition-all">
+                          <td className="px-6 py-4 text-slate-500 font-semibold">{date}</td>
+                          <td className="px-6 py-4 text-slate-800 font-bold">{rekap.description || "Rekap PPOB"}</td>
+                          <td className="px-6 py-4 text-right text-slate-600 font-semibold">
+                            {formatRupiah(rekap.totalRevenue)}
+                          </td>
+                          <td className="px-6 py-4 text-right text-purple-700 font-bold">
+                            {formatRupiah(rekap.totalCommission)}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-10 text-center text-slate-400 font-medium">
+                        Tidak ada riwayat rekap PPOB tahun berjalan.
                       </td>
                     </tr>
-                  )
-                })
-              ) : (
-                <tr>
-                  <td colSpan={4} className="px-6 py-10 text-center text-slate-400 font-medium">
-                    Tidak ada riwayat rekap PPOB tahun berjalan.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Modal: Create Rekap */}
       {activeModal && (

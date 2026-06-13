@@ -78,31 +78,46 @@ export default function AsetTab({ onRefreshReport }: AsetTabProps) {
     }
   }
 
-  const handleRunDepreciation = async () => {
-    const year = prompt("Masukkan tahun penyusutan (misal: 2026):", "2026")
-    if (!year) return
-    
-    if (!confirm(`Apakah Anda yakin ingin menjalankan penyusutan otomatis akhir tahun ${year} untuk seluruh aset tetap aktif? Tindakan ini akan memposting biaya depresiasi ke Laporan Keuangan.`)) {
-      return
-    }
+  // Depreciation Modal states
+  const [showDepModal, setShowDepModal] = useState(false)
+  const [depYear, setDepYear] = useState("2026")
+  const [depStep, setDepStep] = useState<"input" | "confirm" | "success" | "error">("input")
+  const [depResult, setDepResult] = useState<any>(null)
+  const [depErrorMsg, setDepErrorMsg] = useState("")
+  const [depLoading, setDepLoading] = useState(false)
 
+  const handleRunDepreciationSubmit = async () => {
+    setDepLoading(true)
+    setDepErrorMsg("")
     try {
       const res = await fetch("/api/keuangan/assets", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ year: parseInt(year, 10) })
+        body: JSON.stringify({ year: parseInt(depYear, 10) })
       })
       const result = await res.json()
       if (result.success) {
-        alert(`Sukses! Berhasil menyusutkan ${result.data.count} aset dengan total beban depresiasi: Rp ${result.data.totalDeprecAmount.toLocaleString("id-ID")}`)
+        setDepResult(result.data)
+        setDepStep("success")
         fetchAssets()
         onRefreshReport()
       } else {
-        alert(result.error || "Gagal memproses penyusutan.")
+        throw new Error(result.error || "Gagal memproses penyusutan.")
       }
     } catch (err: any) {
-      alert(err.message || "Terjadi kesalahan koneksi")
+      setDepErrorMsg(err.message || "Terjadi kesalahan")
+      setDepStep("error")
+    } finally {
+      setDepLoading(false)
     }
+  }
+
+  const handleOpenDepModal = () => {
+    setDepYear("2026")
+    setDepStep("input")
+    setDepErrorMsg("")
+    setDepResult(null)
+    setShowDepModal(true)
   }
 
   return (
@@ -115,7 +130,7 @@ export default function AsetTab({ onRefreshReport }: AsetTabProps) {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={handleRunDepreciation}
+            onClick={handleOpenDepModal}
             className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 font-bold px-4 py-2.5 rounded-2xl text-xs shadow-md active:scale-95 transition-all"
           >
             <Scale className="w-3.5 h-3.5" />
@@ -200,7 +215,7 @@ export default function AsetTab({ onRefreshReport }: AsetTabProps) {
             <button
               type="button"
               onClick={() => setShowAddAssetModal(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-55 hover:text-slate-600"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
             >
               <X className="w-5 h-5" />
             </button>
@@ -281,6 +296,136 @@ export default function AsetTab({ onRefreshReport }: AsetTabProps) {
                 {formSubmitLoading ? "Memproses..." : "Catat & Beli Aset"}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Depreciation Modal */}
+      {showDepModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-sm shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setShowDepModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {depStep === "input" && (
+              <div className="space-y-4">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Scale className="w-5 h-5 text-blue-600" />
+                  Penyusutan Aset Akhir Tahun
+                </h3>
+                <p className="text-slate-400 text-xs font-semibold leading-relaxed">
+                  Masukkan tahun pembukuan penyusutan untuk seluruh aset tetap aktif.
+                </p>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Tahun Pembukuan</label>
+                  <input
+                    type="number"
+                    value={depYear}
+                    onChange={(e) => setDepYear(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white focus:outline-none rounded-xl text-xs font-bold text-slate-800"
+                  />
+                </div>
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDepModal(false)}
+                    className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDepStep("confirm")}
+                    className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-md"
+                  >
+                    Lanjutkan
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {depStep === "confirm" && (
+              <div className="space-y-4">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-500" />
+                  Konfirmasi Penyusutan
+                </h3>
+                <p className="text-slate-500 text-xs font-semibold leading-relaxed">
+                  Apakah Anda yakin ingin menjalankan penyusutan otomatis akhir tahun <strong className="text-slate-800">{depYear}</strong> untuk seluruh aset tetap aktif? 
+                  <span className="block mt-2 text-slate-400 font-normal">Tindakan ini akan memposting biaya depresiasi ke Laporan Keuangan secara otomatis.</span>
+                </p>
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setDepStep("input")}
+                    className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                  >
+                    Kembali
+                  </button>
+                  <button
+                    type="button"
+                    disabled={depLoading}
+                    onClick={handleRunDepreciationSubmit}
+                    className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1.5"
+                  >
+                    {depLoading ? "Memproses..." : "Ya, Susutkan"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {depStep === "success" && (
+              <div className="space-y-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-slate-900 text-sm">Penyusutan Sukses!</h3>
+                <p className="text-slate-500 text-xs font-semibold leading-relaxed">
+                  Berhasil menyusutkan <strong className="text-slate-800">{depResult?.count}</strong> aset tetap aktif dengan total biaya depresiasi:
+                  <span className="block text-emerald-600 font-black text-sm mt-1.5">{formatRupiah(depResult?.totalDeprecAmount)}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowDepModal(false)}
+                  className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition mt-2"
+                >
+                  Selesai
+                </button>
+              </div>
+            )}
+
+            {depStep === "error" && (
+              <div className="space-y-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+                  <X className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-slate-900 text-sm">Penyusutan Gagal</h3>
+                <p className="text-slate-500 text-xs font-semibold leading-relaxed">
+                  {depErrorMsg || "Terjadi kesalahan saat memproses penyusutan aset."}
+                </p>
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDepModal(false)}
+                    className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                  >
+                    Tutup
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRunDepreciationSubmit}
+                    className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-md"
+                  >
+                    Coba Lagi
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

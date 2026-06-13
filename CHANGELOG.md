@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.0] - 2026-06-13
+
+### Added
+- **Pengaturan Konten Detail Layanan Dinamis per Sub-Unit**:
+  - Menyediakan form input konten detail layanan (Deskripsi, Tarif, Keunggulan, dan Persyaratan) secara modular di setiap halaman pengaturan admin sub-unit (Simpan Pinjam, PPOB, Sewa Gedung).
+  - Sinkronisasi halaman publik detail layanan agar memuat data dinamis dari database.
+- **Optimasi Pojok UMKM & Halaman Khusus (`/umkm`)**:
+  - Membatasi jumlah produk UMKM yang tampil di halaman beranda menjadi 3 produk teratas saja demi kerapian tata letak.
+  - Membuat halaman baru `/umkm` untuk menyajikan seluruh 10 produk UMKM binaan secara dinamis dan interaktif.
+  - Menambahkan link navigasi "Lihat Semua Produk UMKM" pada beranda.
+  - Memasukkan data simulasi lengkap 10 produk UMKM ke dalam skrip database seeder `seed-demo.ts`.
+- **Modal Kustom Penyusutan Akhir Tahun**:
+  - Menggantikan dialog bawaan browser (`prompt`, `confirm`, `alert`) pada modul Aset Tetap (`AsetTab.tsx`) dengan modal konfirmasi & input kustom yang modern dan interaktif berbasis Tailwind CSS.
+
 ## [1.9.0] - 2026-06-12
 
 ### Added

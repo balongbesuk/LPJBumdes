@@ -22,6 +22,7 @@ import {
 import { formatRupiah } from "@/lib/utils"
 import KwitansiModal from "@/components/KwitansiModal"
 import { useSettings } from "@/context/SettingsContext"
+import GedungSettingsTab from "./GedungSettingsTab"
 
 interface Booking {
   id: string
@@ -42,7 +43,7 @@ export default function SewaGedungPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [activeTab, setActiveTab] = useState<"kalender" | "laporan">("kalender")
+  const [activeTab, setActiveTab] = useState<"kalender" | "laporan" | "pengaturan">("kalender")
   const [reportMonth, setReportMonth] = useState<string>("all")
   const [reportYear, setReportYear] = useState<string>("2026")
   const [gedungReportData, setGedungReportData] = useState<{
@@ -435,6 +436,14 @@ export default function SewaGedungPage() {
             >
               Laporan & Rekap
             </button>
+            <button
+              onClick={() => setActiveTab("pengaturan")}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "pengaturan" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Pengaturan
+            </button>
           </div>
 
           {activeTab === "laporan" ? (
@@ -635,6 +644,8 @@ export default function SewaGedungPage() {
                 </div>
               </div>
             </div>
+          ) : activeTab === "pengaturan" ? (
+            <GedungSettingsTab />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         

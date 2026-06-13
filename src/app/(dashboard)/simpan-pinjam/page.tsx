@@ -32,6 +32,7 @@ import SavingModal from "./components/SavingModal"
 import LoanModal from "./components/LoanModal"
 import RepaymentModal from "./components/RepaymentModal"
 import CkpnModal from "./components/CkpnModal"
+import SpSettingsTab from "./components/SpSettingsTab"
 
 interface Member {
   id: string
@@ -64,7 +65,7 @@ interface Loan {
 export default function SimpanPinjamPage() {
   const settings = useSettings()
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<"members" | "loans">("members")
+  const [activeTab, setActiveTab] = useState<"members" | "loans" | "pengaturan">("members")
   const [memberStatusFilter, setMemberStatusFilter] = useState<"active" | "inactive">("active")
   
   // Data lists
@@ -677,6 +678,17 @@ export default function SimpanPinjamPage() {
               >
                 Piutang Pinjaman Kredit
               </button>
+              <button
+                onClick={() => {
+                  setActiveTab("pengaturan")
+                  setSearchQuery("")
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === "pengaturan" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                Pengaturan
+              </button>
             </div>
           </div>
 
@@ -716,6 +728,8 @@ export default function SimpanPinjamPage() {
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
             />
+          ) : activeTab === "pengaturan" ? (
+            <SpSettingsTab />
           ) : (
             <LoanTab
               filteredLoans={filteredLoans}

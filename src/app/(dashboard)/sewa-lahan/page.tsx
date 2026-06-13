@@ -20,6 +20,7 @@ import LahanTable from "./components/LahanTable"
 import LahanReportTab from "./components/LahanReportTab"
 import LahanContractModal from "./components/LahanContractModal"
 import LahanPaymentModal from "./components/LahanPaymentModal"
+import LahanSettingsTab from "./components/LahanSettingsTab"
 
 interface Payment {
   id: string
@@ -44,7 +45,7 @@ interface Contract {
 
 export default function SewaLahanPage() {
   const settings = useSettings()
-  const [activeTab, setActiveTab] = useState<"warung" | "lapak" | "laporan">("warung")
+  const [activeTab, setActiveTab] = useState<"warung" | "lapak" | "laporan" | "pengaturan">("warung")
   const [contracts, setContracts] = useState<Contract[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(true)
@@ -532,9 +533,17 @@ export default function SewaLahanPage() {
               >
                 Laporan & Rekap
               </button>
+              <button
+                onClick={() => setActiveTab("pengaturan")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === "pengaturan" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                Pengaturan & UMKM
+              </button>
             </div>
 
-            {activeTab !== "laporan" && (
+            {activeTab !== "laporan" && activeTab !== "pengaturan" && (
               <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 w-4 h-4" />
                 <input
@@ -568,6 +577,8 @@ export default function SewaLahanPage() {
               reportLoading={reportLoading}
               lahanReportData={lahanReportData}
             />
+          ) : activeTab === "pengaturan" ? (
+            <LahanSettingsTab />
           ) : (
             <LahanTable
               filteredContracts={filteredContracts}
